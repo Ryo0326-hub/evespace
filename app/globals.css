@@ -10,7 +10,8 @@
 
 html {
   min-height: 100%;
-  overflow-x: hidden;
+  /* clip hides horizontal bleed without breaking position:sticky like overflow-x:hidden often does */
+  overflow-x: clip;
   overflow-y: auto;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
@@ -28,7 +29,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   min-height: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   overflow-y: auto;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;

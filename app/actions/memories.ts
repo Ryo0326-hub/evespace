@@ -8,8 +8,10 @@ import { canPostToBoard, getAccessibleBoardById } from "@/lib/data/boards";
 import { getEventBySlug } from "@/lib/data/events";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { acceptedImageTypes, maxUploadSizeBytes } from "@/lib/constants";
+import { isRegisteredStickerId } from "@/lib/stickers/sticker-registry";
 import type {
   MemoryPostStatus,
+  PlacedSticker,
   StickerPlacement,
   StickerSelection,
 } from "@/types/evespace";
@@ -198,4 +200,117 @@ function readStickers(formData: FormData): StickerSelection[] {
 function clean(value: FormDataEntryValue | null) {
   const next = String(value ?? "").trim();
   return next.length > 0 ? next : null;
+}
+
+function clampUnitInterval(value: number) {
+  return Math.min(1, Math.max(0, value));
+}
+
+function sanitizePersistedOverlay(sticker: PlacedSticker): boolean {
+  return (
+    typeof sticker.id === "string" &&
+    sticker.id.length > 0 &&
+    typeof sticker.postId === "string" &&
+    sticker.postId.length > 0 &&
+    typeof sticker.stickerId === "string" &&
+    isRegisteredStickerId(sticker.stickerId) &&
+    Number.isFinite(sticker.x) &&
+    Number.isFinite(sticker.y) &&
+    sticker.x >= 0 &&
+    sticker.x <= 1 &&
+    sticker.y >= 0 &&
+    sticker.y <= 1
+  );
+}
+
+function overlayToJson(sticker: PlacedSticker) {
+  return {
+    id: sticker.id,
+    stickerId: sticker.stickerId,
+    x: clampUnitInterval(sticker.x),
+    y: clampUnitInterval(sticker.y),
+    rotation: Number.isFinite(sticker.rotation) ? sticker.rotation : 0,
+    size:
+      Number.isFinite(sticker.size) && sticker.size > 20
+        ? Math.min(sticker.size, 140)
+        : 68,
+  };
+}
+
+export async function syncOverlayStickersAction(payload: {
+  boardId: string;
+  stickers: PlacedSticker[];
+}) {
+  const profile = await ensureUserProfile();
+
+  if (!profile) {
+    throw new Error("Sign in required.");
+  }
+
+  const board = await getAccessibleBoardById(payload.boardId, profile);
+
+  if (!board) {
+    throw new Error("Board not found.");
+  }
+
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    throw new Error("Supabase service role is not configured.");
+  }
+
+  const incomingByPost = new Map<string, PlacedSticker[]>();
+
+  for (const sticker of payload.stickers) {
+    if (!sanitizePersistedOverlay(sticker)) {
+      continue;
+    }
+
+    const list = incomingByPost.get(sticker.postId) ?? [];
+
+    if (list.length >= 3) {
+      continue;
+    }
+
+    list.push(sticker);
+    incomingByPost.set(sticker.postId, list);
+  }
+
+  const { data: ownPosts, error: postsError } = await supabase
+    .from("memory_posts")
+    .select("id")
+    .eq("board_id", board.id)
+    .eq("profile_id", profile.id);
+
+  if (postsError) {
+    throw new Error(postsError.message);
+  }
+
+  const ownedIds = new Set((ownPosts ?? []).map((row) => String(row.id)));
+
+  for (const postId of ownedIds) {
+    const rawList = incomingByPost.get(postId) ?? [];
+    const sanitized = rawList.filter(sanitizePersistedOverlay).slice(0, 3);
+    const overlayJson = sanitized.map(overlayToJson);
+
+    const { error } = await supabase
+      .from("memory_posts")
+      .update({
+        overlay_stickers: overlayJson,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", postId)
+      .eq("profile_id", profile.id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  revalidatePath(`/boards/${board.id}`);
+
+  if (board.boardType === "official_event") {
+    revalidatePath(`/events/${board.slug}/board`);
+    revalidatePath(`/events/${board.slug}`);
+  }
 }

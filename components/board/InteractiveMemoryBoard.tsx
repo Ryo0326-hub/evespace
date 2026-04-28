@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { syncOverlayStickersAction } from "@/app/actions/memories";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MemoryCard } from "@/components/board/MemoryCard";
 import { StickerStorePanel } from "@/components/board/StickerStorePanel";
 import { getStickerOption } from "@/components/board/StickerVisual";
@@ -48,12 +49,50 @@ function getDropCard(clientX: number, clientY: number) {
   return null;
 }
 
-export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
+export function InteractiveMemoryBoard({
+  boardId,
+  posts,
+  viewerProfileId,
+}: {
+  boardId: string;
+  posts: MemoryPost[];
+  viewerProfileId: string | null;
+}) {
+  const firstOwnedPostId = useMemo(() => {
+    if (!viewerProfileId) {
+      return "";
+    }
+
+    const owned = posts.find((post) => post.profileId === viewerProfileId);
+    return owned?.id ?? "";
+  }, [posts, viewerProfileId]);
+
   const [storeOpen, setStoreOpen] = useState(false);
-  const [selectedPostId, setSelectedPostId] = useState(posts[0]?.id ?? "");
-  const [stickers, setStickers] = useState<PlacedSticker[]>([]);
+  const [selectedPostId, setSelectedPostId] = useState(firstOwnedPostId);
+  const [stickers, setStickers] = useState<PlacedSticker[]>(() =>
+    posts.flatMap((post) => post.overlayStickers),
+  );
   const [limitWarning, setLimitWarning] = useState("");
   const warningTimeoutRef = useRef<number | null>(null);
+  const skipInitialSave = useRef(true);
+
+  const ownsPost = useCallback(
+    (postId: string | undefined | null) => {
+      if (!viewerProfileId || !postId) {
+        return false;
+      }
+
+      const post = posts.find((item) => item.id === postId);
+      return Boolean(post?.profileId && post.profileId === viewerProfileId);
+    },
+    [posts, viewerProfileId],
+  );
+
+  function handleSelectPost(postId: string) {
+    if (ownsPost(postId)) {
+      setSelectedPostId(postId);
+    }
+  }
 
   const stickersByPost = useMemo(() => {
     return stickers.reduce<Record<string, PlacedSticker[]>>((groups, sticker) => {
@@ -61,6 +100,18 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
       return groups;
     }, {});
   }, [stickers]);
+
+  const stickerStoreHint = useMemo(() => {
+    if (!viewerProfileId) {
+      return "Sign in to add stickers on your memories.";
+    }
+
+    if (!firstOwnedPostId) {
+      return "Stickers only go on memories you posted. Post one first.";
+    }
+
+    return undefined;
+  }, [viewerProfileId, firstOwnedPostId]);
 
   useEffect(() => {
     function toggleStore() {
@@ -74,6 +125,27 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!viewerProfileId || !boardId) {
+      return;
+    }
+
+    if (skipInitialSave.current) {
+      skipInitialSave.current = false;
+      return;
+    }
+
+    const ownedOnly = stickers.filter((sticker) => ownsPost(sticker.postId));
+
+    const timeoutId = window.setTimeout(() => {
+      syncOverlayStickersAction({ boardId, stickers: ownedOnly }).catch((error) => {
+        console.error("Failed to save stickers", error);
+      });
+    }, 750);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [stickers, boardId, viewerProfileId, ownsPost]);
+
   function addSticker(
     stickerId: StickerId,
     options: {
@@ -85,29 +157,34 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
       requireDropTarget?: boolean;
     } = {},
   ) {
+    if (!viewerProfileId) {
+      return;
+    }
+
     const dropCard =
       typeof options.clientX === "number" && typeof options.clientY === "number"
         ? getDropCard(options.clientX, options.clientY)
         : null;
-    const targetPostId =
+    const rawTarget =
       dropCard?.dataset.memoryCardId ||
       options.postId ||
       selectedPostId ||
-      posts[0]?.id;
+      firstOwnedPostId ||
+      "";
 
     if (options.requireDropTarget && !dropCard) {
       return;
     }
 
-    if (!targetPostId) {
+    if (!rawTarget) {
       return;
     }
 
-    if ((stickersByPost[targetPostId] ?? []).length >= maxStickersPerPost) {
-      setSelectedPostId(targetPostId);
-      showLimitWarning();
+    if (!ownsPost(rawTarget)) {
       return;
     }
+
+    const targetPostId = rawTarget;
 
     const layer = dropCard?.querySelector<HTMLElement>(
       `[data-sticker-layer-for="${targetPostId}"]`,
@@ -121,38 +198,49 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
     const availableY = rect
       ? Math.max(1, rect.height - placedStickerSize - stickerPadding * 2)
       : 1;
-    const pixelX =
-      rect && typeof options.clientX === "number"
-        ? clamp(
-            options.clientX - rect.left - dropOffsetX,
-            stickerPadding,
-            stickerPadding + availableX,
-          )
-        : stickerPadding + ((stickers.length % 4) / 4) * availableX;
-    const pixelY =
-      rect && typeof options.clientY === "number"
-        ? clamp(
-            options.clientY - rect.top - dropOffsetY,
-            stickerPadding,
-            stickerPadding + availableY,
-          )
-        : stickerPadding + 0.35 * availableY + ((stickers.length % 3) / 8) * availableY;
-    const x = toRelativePosition(pixelX - stickerPadding, availableX);
-    const y = toRelativePosition(pixelY - stickerPadding, availableY);
 
     setSelectedPostId(targetPostId);
-    setStickers((current) => [
-      ...current,
-      {
-        id: createStickerId(),
-        postId: targetPostId,
-        stickerId,
-        x,
-        y,
-        rotation: Math.round((Math.random() * 16 - 8) * 10) / 10,
-        size: placedStickerSize,
-      },
-    ]);
+
+    setStickers((current) => {
+      const countForPost = current.filter((item) => item.postId === targetPostId).length;
+
+      if (countForPost >= maxStickersPerPost) {
+        showLimitWarning();
+        return current;
+      }
+
+      const pixelX =
+        rect && typeof options.clientX === "number"
+          ? clamp(
+              options.clientX - rect.left - dropOffsetX,
+              stickerPadding,
+              stickerPadding + availableX,
+            )
+          : stickerPadding + ((current.length % 4) / 4) * availableX;
+      const pixelY =
+        rect && typeof options.clientY === "number"
+          ? clamp(
+              options.clientY - rect.top - dropOffsetY,
+              stickerPadding,
+              stickerPadding + availableY,
+            )
+          : stickerPadding + 0.35 * availableY + ((current.length % 3) / 8) * availableY;
+      const x = toRelativePosition(pixelX - stickerPadding, availableX);
+      const y = toRelativePosition(pixelY - stickerPadding, availableY);
+
+      return [
+        ...current,
+        {
+          id: createStickerId(),
+          postId: targetPostId,
+          stickerId,
+          x,
+          y,
+          rotation: Math.round((Math.random() * 16 - 8) * 10) / 10,
+          size: placedStickerSize,
+        },
+      ];
+    });
   }
 
   function showLimitWarning() {
@@ -169,21 +257,37 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
   }
 
   function moveSticker(stickerId: string, x: number, y: number) {
-    setStickers((current) =>
-      current.map((sticker) =>
-        sticker.id === stickerId ? { ...sticker, x, y } : sticker,
-      ),
-    );
+    setStickers((current) => {
+      const sticker = current.find((item) => item.id === stickerId);
+      if (!sticker || !ownsPost(sticker.postId)) {
+        return current;
+      }
+
+      return current.map((item) =>
+        item.id === stickerId ? { ...item, x, y } : item,
+      );
+    });
   }
 
   function deleteSticker(stickerId: string) {
-    setStickers((current) => current.filter((sticker) => sticker.id !== stickerId));
+    setStickers((current) => {
+      const sticker = current.find((item) => item.id === stickerId);
+      if (!sticker || !ownsPost(sticker.postId)) {
+        return current;
+      }
+
+      return current.filter((item) => item.id !== stickerId);
+    });
   }
 
   function startStickerDrag(
     event: React.PointerEvent<HTMLDivElement>,
     stickerId: StickerId,
   ) {
+    if (!viewerProfileId) {
+      return;
+    }
+
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
 
@@ -221,7 +325,7 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
     ghost.style.top = "0";
     ghost.style.transform = `translate3d(${visualRect.left}px, ${visualRect.top}px, 0)`;
     ghost.style.width = `${dragGhostSize}px`;
-    ghost.style.zIndex = "90";
+    ghost.style.zIndex = "125";
     document.body.appendChild(ghost);
 
     function handlePointerMove(moveEvent: PointerEvent) {
@@ -263,10 +367,14 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
     window.addEventListener("pointercancel", finishDrag);
   }
 
+  const selectedCountForStore = ownsPost(selectedPostId)
+    ? (stickersByPost[selectedPostId] ?? []).length
+    : 0;
+
   return (
-    <section className="relative touch-pan-y">
+    <section className="relative isolate z-0 touch-pan-y overflow-visible">
       {limitWarning ? (
-        <div className="fixed right-3 top-32 z-[80] max-w-[18rem] rounded-2xl border border-amber-200 bg-amber-100 px-4 py-3 text-xs font-bold text-slate-950 shadow-2xl shadow-black/25 sm:right-6 sm:top-36">
+        <div className="fixed right-3 top-32 z-[115] max-w-[18rem] rounded-2xl border border-amber-200 bg-amber-100 px-4 py-3 text-xs font-bold text-slate-950 shadow-2xl shadow-black/25 sm:right-6 sm:top-36">
           {limitWarning}
         </div>
       ) : null}
@@ -275,23 +383,27 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
         {posts.map((post) => (
           <MemoryCard
             key={post.id}
-            onSelect={setSelectedPostId}
+            canEditStickers={Boolean(
+              viewerProfileId && post.profileId === viewerProfileId,
+            )}
+            onSelect={handleSelectPost}
             onStickerDelete={deleteSticker}
             onStickerMove={moveSticker}
             post={post}
-            selected={selectedPostId === post.id}
+            selected={selectedPostId === post.id && ownsPost(post.id)}
             stickers={stickersByPost[post.id] ?? []}
           />
         ))}
       </div>
 
       <StickerStorePanel
+        hint={stickerStoreHint}
         maxStickersPerPost={maxStickersPerPost}
         onAddSticker={(stickerId) => addSticker(stickerId)}
         onClose={() => setStoreOpen(false)}
         onStartStickerDrag={startStickerDrag}
         open={storeOpen}
-        selectedStickerCount={(stickersByPost[selectedPostId] ?? []).length}
+        selectedStickerCount={selectedCountForStore}
       />
     </section>
   );

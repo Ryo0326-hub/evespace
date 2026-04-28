@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { useMemo, useRef, useState } from "react";
 import { StickerVisual } from "@/components/board/StickerVisual";
 import { STICKER_CATEGORIES, STICKERS } from "@/lib/stickers/sticker-registry";
@@ -18,6 +19,7 @@ export function StickerStorePanel({
   onStartStickerDrag,
   selectedStickerCount,
   maxStickersPerPost,
+  hint,
 }: {
   open: boolean;
   onClose: () => void;
@@ -28,6 +30,7 @@ export function StickerStorePanel({
   ) => void;
   selectedStickerCount: number;
   maxStickersPerPost: number;
+  hint?: string;
 }) {
   const [categoryId, setCategoryId] = useState<StickerCategory>("pixel");
   const [query, setQuery] = useState("");
@@ -49,6 +52,10 @@ export function StickerStorePanel({
   }, [categoryId, query]);
 
   if (!open) {
+    return null;
+  }
+
+  if (typeof document === "undefined") {
     return null;
   }
 
@@ -126,11 +133,11 @@ export function StickerStorePanel({
     window.addEventListener("pointercancel", stopPanelDrag);
   }
 
-  return (
+  return createPortal(
     <div
       className={cn(
-        "fixed z-[70] w-[min(20rem,calc(100vw-1.5rem))] sm:w-80",
-        "right-3 top-[7.25rem] sm:right-6 sm:top-[7.5rem]",
+        "fixed z-[110] w-[min(20rem,calc(100vw-1.5rem))] sm:w-80",
+        "right-3 top-[9rem] sm:right-6 sm:top-[9.25rem]",
       )}
       ref={panelRef}
       style={{
@@ -175,6 +182,12 @@ export function StickerStorePanel({
             </button>
           </div>
         </header>
+
+        {hint ? (
+          <p className="border-b border-black/10 px-3 py-2 text-[0.7rem] font-semibold leading-snug text-slate-800">
+            {hint}
+          </p>
+        ) : null}
 
         <div className="max-h-[calc(35vh-3.2rem)] overflow-y-auto p-3 pb-5 sm:max-h-[calc(28rem-3.2rem)]">
           <label className="grid gap-1.5 text-sm text-black">
@@ -242,6 +255,7 @@ export function StickerStorePanel({
           ) : null}
         </div>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -1,12 +1,32 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useFormStatus } from "react-dom";
 import { MemoryCard } from "@/components/board/MemoryCard";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, Input, Textarea } from "@/components/ui/Field";
 import { acceptedImageTypes, maxUploadSizeBytes } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import type { Board, MemoryPost } from "@/types/evespace";
+
+function MemoryPostSubmitButton({ fileSelected }: { fileSelected: boolean }) {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button
+      className={cn(
+        "w-full sm:w-auto",
+        pending &&
+          "cursor-wait border-slate-500 bg-slate-500 text-white hover:border-slate-500 hover:bg-slate-500",
+      )}
+      disabled={!fileSelected || pending}
+      type="submit"
+    >
+      {pending ? "Posting…" : "Post Memory"}
+    </Button>
+  );
+}
 
 export function MemoryPostForm({
   action,
@@ -35,6 +55,7 @@ export function MemoryPostForm({
       storagePath: null,
       caption: caption || "Your note will appear here.",
       stickers: [],
+      overlayStickers: [],
       frameStyle: "none",
       stickyNoteStyle: "default",
       stickerId: null,
@@ -90,9 +111,7 @@ export function MemoryPostForm({
             Add stickers from the memory board after posting.
           </p>
 
-          <Button className="w-full sm:w-auto" type="submit" disabled={!file}>
-            Post Memory
-          </Button>
+          <MemoryPostSubmitButton fileSelected={Boolean(file)} />
         </form>
       </Card>
 

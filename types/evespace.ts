@@ -141,6 +141,9 @@ export type EventSchedule = {
   updatedAt: string;
 };
 
+/** Serialized in DB (per row; no postId). */
+export type OverlayStickerPersisted = Omit<PlacedSticker, "postId">;
+
 export type MemoryPost = {
   id: string;
   boardId: string | null;
@@ -152,7 +155,10 @@ export type MemoryPost = {
   imageUrl: string;
   storagePath: string | null;
   caption: string | null;
+  /** Legacy corner placements on the photo. */
   stickers: StickerSelection[];
+  /** Draggable sticker overlays (saved per post). */
+  overlayStickers: PlacedSticker[];
   frameStyle: FrameStyle;
   stickyNoteStyle: StickyNoteStyle;
   stickerId: string | null;

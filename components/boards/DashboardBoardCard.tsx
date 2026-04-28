@@ -41,7 +41,9 @@ export function DashboardBoardCard({
         </div>
       </div>
       <div className="flex flex-wrap gap-2">
-        <LinkButton href={href}>Open Board</LinkButton>
+        <LinkButton className="text-black" href={href}>
+          Open Board
+        </LinkButton>
         {board.boardType === "private_memory" ? (
           <LinkButton href={`/boards/${board.id}/edit`} variant="secondary">
             Edit

@@ -45,14 +45,14 @@ export function GalaxySearch({
 
   return (
     <div
-      className={`glass-panel w-[min(92vw,42rem)] rounded-[2rem] p-3 transition ${
+      className={`glass-panel w-[min(92vw,42rem)] rounded-[1.5rem] p-2 transition sm:rounded-[2rem] sm:p-3 ${
         disabled ? "scale-95 opacity-0" : "opacity-100"
       }`}
     >
       <label className="sr-only" htmlFor="event-search">
         Search the galaxy
       </label>
-      <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/10 px-5 py-4">
+      <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/10 px-4 py-3 sm:px-5 sm:py-4">
         <span className="text-cyan-100" aria-hidden="true">
           *
         </span>
@@ -92,7 +92,7 @@ export function GalaxySearch({
         />
       </div>
 
-      <div className="mt-3 overflow-hidden rounded-3xl border border-white/10 bg-slate-950/70">
+      <div className="mt-2 overflow-hidden rounded-[1.25rem] border border-white/10 bg-slate-950/70 sm:mt-3 sm:rounded-3xl">
         {suggestions.length > 0 ? (
           suggestions.map((event, index) => (
             <button
@@ -101,7 +101,7 @@ export function GalaxySearch({
               disabled={disabled}
               onMouseEnter={() => setActiveIndex(index)}
               onClick={() => onSelect(event)}
-              className={`grid w-full gap-1 px-5 py-4 text-left transition ${
+              className={`grid w-full gap-0.5 px-4 py-2.5 text-left transition sm:gap-1 sm:px-5 sm:py-4 ${
                 index === activeIndex
                   ? "bg-cyan-200/15 text-white"
                   : "text-slate-200 hover:bg-white/10"

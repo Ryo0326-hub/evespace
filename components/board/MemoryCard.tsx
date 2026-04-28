@@ -18,6 +18,7 @@ export function MemoryCard({
   post,
   stickers = [],
   selected = false,
+  canEditStickers = false,
   onSelect,
   onStickerMove,
   onStickerDelete,
@@ -25,6 +26,7 @@ export function MemoryCard({
   post: MemoryPost;
   stickers?: PlacedSticker[];
   selected?: boolean;
+  canEditStickers?: boolean;
   onSelect?: (postId: string) => void;
   onStickerMove?: (stickerId: string, x: number, y: number) => void;
   onStickerDelete?: (stickerId: string) => void;
@@ -47,11 +49,14 @@ export function MemoryCard({
           data-sticker-layer-for={post.id}
         >
           {stickers.map((sticker) => (
-            <div className="pointer-events-auto" key={sticker.id}>
+            <div
+              className={canEditStickers ? "pointer-events-auto" : "pointer-events-none"}
+              key={sticker.id}
+            >
               <DraggableSticker
                 containerRef={stickerLayerRef}
-                onDelete={onStickerDelete}
-                onMove={onStickerMove}
+                onDelete={canEditStickers ? onStickerDelete : undefined}
+                onMove={canEditStickers ? onStickerMove : undefined}
                 sticker={sticker}
               />
             </div>

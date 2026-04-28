@@ -54,3 +54,9 @@ export const STICKERS: Sticker[] = [
 export function getSticker(stickerId: StickerId) {
   return STICKERS.find((sticker) => sticker.id === stickerId) ?? null;
 }
+
+const stickerIdSet = new Set(STICKERS.map((sticker) => sticker.id));
+
+export function isRegisteredStickerId(id: string): id is StickerId {
+  return stickerIdSet.has(id);
+}

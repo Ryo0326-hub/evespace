@@ -14,7 +14,7 @@ import {
 } from "@/lib/data/boards";
 import { getApprovedMemoryPostsByBoard } from "@/lib/data/memory-posts";
 import { isFollowing } from "@/lib/data/follows";
-import { compactDateLocation } from "@/lib/utils";
+import { cn, compactDateLocation } from "@/lib/utils";
 
 export default async function PrivateBoardPage({
   params,
@@ -48,7 +48,7 @@ export default async function PrivateBoardPage({
           <LinkButton className="w-full sm:w-auto" href="/dashboard" variant="secondary">
             Back to Dashboard
           </LinkButton>
-          <div className="flex flex-wrap gap-2" id="memory-board-actions">
+          <div className="flex flex-wrap gap-2">
             {canPost ? (
               <LinkButton className="w-full sm:w-auto" href={`/boards/${board.id}/post`}>
                 Post Memory
@@ -67,7 +67,6 @@ export default async function PrivateBoardPage({
                 Edit Board
               </LinkButton>
             ) : null}
-            <StickerStoreButton />
           </div>
         </nav>
 
@@ -102,8 +101,20 @@ export default async function PrivateBoardPage({
           ) : null}
         </header>
 
-        <Card className="border-black/10 bg-white/60 text-slate-950 shadow-sm">
-          <MemoryBoard posts={posts} />
+        <div
+          className={cn(
+            "-mx-3 px-3 sticky top-14 z-[56] mb-4 mt-6 shrink-0 border-b border-black/15 py-3 shadow-sm backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
+            background.className,
+          )}
+          id="memory-board-actions"
+        >
+          <div className="flex justify-end">
+            <StickerStoreButton />
+          </div>
+        </div>
+
+        <Card className="overflow-visible border-black/10 bg-white/60 text-slate-950 shadow-sm">
+          <MemoryBoard boardId={board.id} posts={posts} viewerProfileId={profile?.id ?? null} />
         </Card>
       </div>
     </main>

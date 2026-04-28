@@ -1,8 +1,10 @@
+import { isRegisteredStickerId } from "@/lib/stickers/sticker-registry";
 import type {
   Board,
   Event,
   EventSchedule,
   MemoryPost,
+  PlacedSticker,
   Profile,
   StickerSelection,
 } from "@/types/evespace";
@@ -128,6 +130,7 @@ export function mapMemoryPost(row: DbEvent): MemoryPost {
     storagePath: (row.storage_path as string | null) ?? null,
     caption: (row.caption as string | null) ?? null,
     stickers: parseStickers(row.stickers),
+    overlayStickers: parseOverlayStickers(row.overlay_stickers, String(row.id)),
     frameStyle:
       row.frame_style === "polaroid" ||
       row.frame_style === "soft_rounded" ||
@@ -185,6 +188,57 @@ function EventTheme(value: unknown): Event["boardBackgroundTheme"] {
   }
 
   return "soft_cream";
+}
+
+function clampUnitInterval(value: number) {
+  return Math.min(1, Math.max(0, value));
+}
+
+function parseOverlayStickers(value: unknown, postId: string): PlacedSticker[] {
+  const raw = typeof value === "string" ? safeJsonParse(value) : value;
+
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  const result: PlacedSticker[] = [];
+
+  for (const item of raw.slice(0, 3)) {
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+
+    const sticker = item as Record<string, unknown>;
+    const id = typeof sticker.id === "string" ? sticker.id : "";
+    const stickerId = typeof sticker.stickerId === "string" ? sticker.stickerId : "";
+
+    if (!id || !stickerId || !isRegisteredStickerId(stickerId)) {
+      continue;
+    }
+
+    const x = Number(sticker.x);
+    const y = Number(sticker.y);
+
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      continue;
+    }
+
+    const rotation = Number(sticker.rotation);
+    const size = Number(sticker.size);
+
+    result.push({
+      id,
+      postId,
+      stickerId,
+      x: clampUnitInterval(x),
+      y: clampUnitInterval(y),
+      rotation: Number.isFinite(rotation) ? rotation : 0,
+      size:
+        Number.isFinite(size) && size > 20 ? Math.min(size, 140) : 68,
+    });
+  }
+
+  return result;
 }
 
 function parseStickers(value: unknown): StickerSelection[] {
