@@ -14,9 +14,9 @@ export async function getEventSchedules(eventId: string): Promise<EventSchedule[
   }
 
   const { data, error } = await supabase
-    .from("event_schedules")
+    .from("board_schedules")
     .select("*")
-    .eq("event_id", eventId)
+    .eq("board_id", eventId)
     .order("sort_order", { ascending: true })
     .order("start_time", { ascending: true, nullsFirst: false });
 
@@ -45,9 +45,9 @@ export async function upsertScheduleItems(
     return;
   }
 
-  await supabase.from("event_schedules").insert(
+  await supabase.from("board_schedules").insert(
     items.map((item, index) => ({
-      event_id: eventId,
+      board_id: eventId,
       title: item.title,
       description: item.description ?? null,
       location_name: item.locationName ?? null,
@@ -68,6 +68,6 @@ export async function replaceScheduleItems(
     return;
   }
 
-  await supabase.from("event_schedules").delete().eq("event_id", eventId);
+  await supabase.from("board_schedules").delete().eq("board_id", eventId);
   await upsertScheduleItems(eventId, items);
 }

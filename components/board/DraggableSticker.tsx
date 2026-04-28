@@ -8,24 +8,56 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+function getRelativePosition(position: number, availableSpace: number) {
+  if (availableSpace <= 0) {
+    return 0;
+  }
+
+  return clamp(position / availableSpace, 0, 1);
+}
+
 export function DraggableSticker({
   sticker,
   containerRef,
   onMove,
+  onDelete,
 }: {
   sticker: PlacedSticker;
   containerRef: React.RefObject<HTMLElement | null>;
   onMove?: (stickerId: string, x: number, y: number) => void;
+  onDelete?: (stickerId: string) => void;
 }) {
-  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(
-    null,
-  );
   const [isDragging, setIsDragging] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const stickerRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const pendingRef = useRef<{ x: number; y: number } | null>(null);
-  const position = dragPosition ?? { x: sticker.x, y: sticker.y };
+  const padding = 8;
 
-  function handlePointerDown(event: React.PointerEvent<HTMLButtonElement>) {
+  function getBoundedPosition(value: number) {
+    const percent = value * 100;
+    const reservedSpace = value * (sticker.size + padding * 2);
+
+    return `calc(${padding}px + ${percent}% - ${reservedSpace}px)`;
+  }
+
+  function getTransform() {
+    const lift = isDragging ? " scale(1.08)" : "";
+
+    return `rotate(${sticker.rotation}deg)${lift}`;
+  }
+
+  function applyPosition(x: number, y: number) {
+    if (!stickerRef.current) {
+      return;
+    }
+
+    stickerRef.current.style.left = `${x}px`;
+    stickerRef.current.style.top = `${y}px`;
+    stickerRef.current.style.transform = `rotate(${sticker.rotation}deg) scale(1.08)`;
+  }
+
+  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
     const moveSticker = onMove;
 
     if (!moveSticker) {
@@ -37,27 +69,56 @@ export function DraggableSticker({
       return;
     }
     const containerElement = container;
+    const stickerElement = stickerRef.current;
+
+    if (!stickerElement) {
+      return;
+    }
 
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     setIsDragging(true);
 
-    const start = {
+    const containerRect = containerElement.getBoundingClientRect();
+    const stickerRect = stickerElement.getBoundingClientRect();
+    const availableX = Math.max(1, containerRect.width - sticker.size - padding * 2);
+    const availableY = Math.max(1, containerRect.height - sticker.size - padding * 2);
+    const origin = {
+      x: padding + sticker.x * availableX,
+      y: padding + sticker.y * availableY,
+    };
+    const originPointer = {
       x: event.clientX,
       y: event.clientY,
     };
-    const origin = {
-      x: sticker.x,
-      y: sticker.y,
+    const grabOffset = {
+      x: event.clientX - stickerRect.left,
+      y: event.clientY - stickerRect.top,
     };
-    const padding = 8;
+    let didMove = false;
 
     function handlePointerMove(moveEvent: PointerEvent) {
-      const maxX = Math.max(padding, containerElement.clientWidth - sticker.size - padding);
-      const maxY = Math.max(padding, containerElement.clientHeight - sticker.size - padding);
+      moveEvent.preventDefault();
+
+      if (
+        Math.abs(moveEvent.clientX - originPointer.x) +
+          Math.abs(moveEvent.clientY - originPointer.y) >
+        4
+      ) {
+        didMove = true;
+      }
+
       const nextPosition = {
-        x: clamp(origin.x + moveEvent.clientX - start.x, padding, maxX),
-        y: clamp(origin.y + moveEvent.clientY - start.y, padding, maxY),
+        x: clamp(
+          moveEvent.clientX - containerRect.left - grabOffset.x,
+          padding,
+          padding + availableX,
+        ),
+        y: clamp(
+          moveEvent.clientY - containerRect.top - grabOffset.y,
+          padding,
+          padding + availableY,
+        ),
       };
 
       pendingRef.current = nextPosition;
@@ -69,7 +130,7 @@ export function DraggableSticker({
       frameRef.current = window.requestAnimationFrame(() => {
         frameRef.current = null;
         if (pendingRef.current) {
-          setDragPosition(pendingRef.current);
+          applyPosition(pendingRef.current.x, pendingRef.current.y);
         }
       });
     }
@@ -87,8 +148,18 @@ export function DraggableSticker({
       const latest = pendingRef.current ?? origin;
       pendingRef.current = null;
       setIsDragging(false);
-      setDragPosition(null);
-      moveSticker?.(sticker.id, Math.round(latest.x), Math.round(latest.y));
+
+      if (!didMove) {
+        setShowDelete((visible) => !visible);
+        return;
+      }
+
+      setShowDelete(false);
+      moveSticker?.(
+        sticker.id,
+        getRelativePosition(latest.x - padding, availableX),
+        getRelativePosition(latest.y - padding, availableY),
+      );
     }
 
     window.addEventListener("pointermove", handlePointerMove);
@@ -97,28 +168,41 @@ export function DraggableSticker({
   }
 
   return (
-    <button
+    <div
       aria-label="Move sticker"
-      className={`absolute touch-none transition-transform ${
+      className={`group absolute touch-none ${
         onMove ? "cursor-grab active:cursor-grabbing" : "pointer-events-none"
-      } ${isDragging ? "z-30 scale-110" : "z-10 hover:scale-105"}`}
+      } ${isDragging ? "z-30" : "z-10"}`}
       onPointerDown={handlePointerDown}
+      ref={stickerRef}
+      role="button"
       style={{
-        left: position.x,
-        top: position.y,
-        transform: `rotate(${sticker.rotation}deg)`,
+        left: getBoundedPosition(sticker.x),
+        top: getBoundedPosition(sticker.y),
+        transform: getTransform(),
+        width: sticker.size,
       }}
-      type="button"
+      tabIndex={0}
     >
-      <StickerVisual
-        className={
-          isDragging
-            ? "shadow-[0_26px_52px_rgba(15,23,42,0.34)]"
-            : "shadow-[0_14px_28px_rgba(15,23,42,0.24)]"
-        }
-        size={sticker.size}
-        stickerId={sticker.stickerId}
-      />
-    </button>
+      <StickerVisual size={sticker.size} stickerId={sticker.stickerId} />
+      {onDelete ? (
+        <button
+          aria-label="Delete sticker"
+          className={`absolute -right-2 -top-2 grid size-7 place-items-center rounded-full border border-black bg-white text-sm font-black leading-none text-black shadow-lg transition ${
+            showDelete ? "opacity-100 sm:opacity-0" : "opacity-0"
+          } sm:group-hover:opacity-100`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete(sticker.id);
+          }}
+          onPointerDown={(event) => {
+            event.stopPropagation();
+          }}
+          type="button"
+        >
+          x
+        </button>
+      ) : null}
+    </div>
   );
 }

@@ -13,7 +13,7 @@ export async function verifyEventAction(eventId: string) {
   }
 
   const { error } = await supabase
-    .from("events")
+    .from("boards")
     .update({
       verification_status: "verified",
       verification_reviewed_at: new Date().toISOString(),
@@ -26,7 +26,9 @@ export async function verifyEventAction(eventId: string) {
     throw new Error(error.message);
   }
 
-  revalidatePath("/dashboard");
+  revalidatePath("/");
+  revalidatePath("/admin/official-events");
+  revalidatePath("/admin/verification");
 }
 
 export async function rejectEventVerificationAction(eventId: string, notes: string) {
@@ -38,7 +40,7 @@ export async function rejectEventVerificationAction(eventId: string, notes: stri
   }
 
   const { error } = await supabase
-    .from("events")
+    .from("boards")
     .update({
       verification_status: "rejected",
       verification_reviewed_at: new Date().toISOString(),
@@ -52,5 +54,6 @@ export async function rejectEventVerificationAction(eventId: string, notes: stri
     throw new Error(error.message);
   }
 
-  revalidatePath("/dashboard");
+  revalidatePath("/admin/official-events");
+  revalidatePath("/admin/verification");
 }

@@ -35,6 +35,15 @@ export function AppNav() {
             </SignUpButton>
           </Show>
           <Show when="signed-in">
+            <Link className="hover:text-white" href="/explore">
+              Explore
+            </Link>
+            <Link className="hidden hover:text-white sm:inline" href="/dashboard">
+              Dashboard
+            </Link>
+            <Link className="hidden hover:text-white sm:inline" href="/notifications">
+              Notifications
+            </Link>
             <Link className="hover:text-white" href="/profile">
               Profile
             </Link>

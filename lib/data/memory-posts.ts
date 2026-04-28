@@ -5,18 +5,26 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { MemoryPost, MemoryPostStatus } from "@/types/evespace";
 
 export async function getApprovedMemoryPosts(eventId: string): Promise<MemoryPost[]> {
-  const supabase = await getSupabaseServerClient();
+  return getApprovedMemoryPostsByBoard(eventId);
+}
+
+export async function getApprovedMemoryPostsByBoard(
+  boardId: string,
+): Promise<MemoryPost[]> {
+  const supabase = getSupabaseAdminClient() ?? getSupabaseServerClient();
 
   if (!supabase) {
     return mockMemoryPosts.filter(
-      (post) => post.eventId === eventId && post.status === "approved",
+      (post) =>
+        (post.boardId === boardId || post.eventId === boardId) &&
+        post.status === "approved",
     );
   }
 
   const { data, error } = await supabase
     .from("memory_posts")
     .select("*")
-    .eq("event_id", eventId)
+    .eq("board_id", boardId)
     .eq("status", "approved")
     .order("created_at", { ascending: false });
 
@@ -29,16 +37,24 @@ export async function getApprovedMemoryPosts(eventId: string): Promise<MemoryPos
 }
 
 export async function getPendingMemoryPosts(eventId: string): Promise<MemoryPost[]> {
+  return getModerationMemoryPostsByBoard(eventId);
+}
+
+export async function getModerationMemoryPostsByBoard(
+  boardId: string,
+): Promise<MemoryPost[]> {
   const supabase = getSupabaseAdminClient() ?? getSupabaseServerClient();
 
   if (!supabase) {
-    return mockMemoryPosts.filter((post) => post.eventId === eventId);
+    return mockMemoryPosts.filter(
+      (post) => post.boardId === boardId || post.eventId === boardId,
+    );
   }
 
   const { data, error } = await supabase
     .from("memory_posts")
     .select("*")
-    .eq("event_id", eventId)
+    .eq("board_id", boardId)
     .in("status", ["pending", "approved"])
     .order("created_at", { ascending: false });
 

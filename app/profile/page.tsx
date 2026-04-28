@@ -2,7 +2,6 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
 import { getManagedEvents } from "@/lib/data/events";
-import { getMemoryPostsByClerkUser } from "@/lib/data/memory-posts";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/Button";
 import { compactDateLocation } from "@/lib/utils";
@@ -14,10 +13,7 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-  const [events, memories] = await Promise.all([
-    getManagedEvents(profile.clerkUserId),
-    getMemoryPostsByClerkUser(profile.clerkUserId),
-  ]);
+  const events = await getManagedEvents(profile.clerkUserId);
 
   return (
     <main className="cosmic-bg min-h-screen px-4 py-8 sm:px-8">
@@ -48,20 +44,12 @@ export default async function ProfilePage() {
           </div>
         </Card>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <h2 className="text-xl font-semibold text-white">Memories Posted</h2>
-            <p className="mt-2 text-4xl font-semibold text-cyan-100">
-              {memories.length}
-            </p>
-          </Card>
-          <Card>
-            <h2 className="text-xl font-semibold text-white">Events Managed</h2>
-            <p className="mt-2 text-4xl font-semibold text-cyan-100">
-              {events.length}
-            </p>
-          </Card>
-        </div>
+        <Card>
+          <h2 className="text-xl font-semibold text-white">Events Managed</h2>
+          <p className="mt-2 text-4xl font-semibold text-cyan-100">
+            {events.length}
+          </p>
+        </Card>
 
         <Card>
           <div className="flex items-center justify-between gap-4">

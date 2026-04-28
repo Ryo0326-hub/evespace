@@ -1,20 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MemoryCard } from "@/components/board/MemoryCard";
 import { StickerStorePanel } from "@/components/board/StickerStorePanel";
-import { StickerVisual } from "@/components/board/StickerVisual";
-import { Button } from "@/components/ui/Button";
+import { getStickerOption } from "@/components/board/StickerVisual";
 import type { MemoryPost, PlacedSticker, StickerId } from "@/types/evespace";
 
-type DragGhost = {
-  stickerId: StickerId;
-  x: number;
-  y: number;
-};
+const maxStickersPerPost = 3;
+const placedStickerSize = 68;
+const dragGhostSize = 50;
+const stickerPadding = 8;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function toRelativePosition(position: number, availableSpace: number) {
+  if (availableSpace <= 0) {
+    return 0;
+  }
+
+  return clamp(position / availableSpace, 0, 1);
 }
 
 function createStickerId() {
@@ -23,18 +29,6 @@ function createStickerId() {
   }
 
   return `sticker-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-function createSeedStickers(posts: MemoryPost[]): PlacedSticker[] {
-  return posts.slice(0, 3).map((post, index) => ({
-    id: `demo-sticker-${post.id}`,
-    postId: post.id,
-    stickerId: (["starburst", "camera", "heart"] as StickerId[])[index] ?? "starburst",
-    x: 24 + index * 10,
-    y: 76 + index * 14,
-    rotation: [-8, 7, -4][index] ?? 0,
-    size: 66,
-  }));
 }
 
 function getDropCard(clientX: number, clientY: number) {
@@ -57,10 +51,9 @@ function getDropCard(clientX: number, clientY: number) {
 export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
   const [storeOpen, setStoreOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState(posts[0]?.id ?? "");
-  const [stickers, setStickers] = useState<PlacedSticker[]>(() =>
-    createSeedStickers(posts),
-  );
-  const [dragGhost, setDragGhost] = useState<DragGhost | null>(null);
+  const [stickers, setStickers] = useState<PlacedSticker[]>([]);
+  const [limitWarning, setLimitWarning] = useState("");
+  const warningTimeoutRef = useRef<number | null>(null);
 
   const stickersByPost = useMemo(() => {
     return stickers.reduce<Record<string, PlacedSticker[]>>((groups, sticker) => {
@@ -69,12 +62,27 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
     }, {});
   }, [stickers]);
 
+  useEffect(() => {
+    function toggleStore() {
+      setStoreOpen((open) => !open);
+    }
+
+    window.addEventListener("evespace:toggle-sticker-store", toggleStore);
+
+    return () => {
+      window.removeEventListener("evespace:toggle-sticker-store", toggleStore);
+    };
+  }, []);
+
   function addSticker(
     stickerId: StickerId,
     options: {
       postId?: string;
       clientX?: number;
       clientY?: number;
+      dropOffsetX?: number;
+      dropOffsetY?: number;
+      requireDropTarget?: boolean;
     } = {},
   ) {
     const dropCard =
@@ -87,31 +95,50 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
       selectedPostId ||
       posts[0]?.id;
 
+    if (options.requireDropTarget && !dropCard) {
+      return;
+    }
+
     if (!targetPostId) {
       return;
     }
 
-    const stickerSize = 68;
+    if ((stickersByPost[targetPostId] ?? []).length >= maxStickersPerPost) {
+      setSelectedPostId(targetPostId);
+      showLimitWarning();
+      return;
+    }
+
     const layer = dropCard?.querySelector<HTMLElement>(
       `[data-sticker-layer-for="${targetPostId}"]`,
     );
     const rect = layer?.getBoundingClientRect();
-    const x =
+    const dropOffsetX = options.dropOffsetX ?? placedStickerSize / 2;
+    const dropOffsetY = options.dropOffsetY ?? placedStickerSize / 2;
+    const availableX = rect
+      ? Math.max(1, rect.width - placedStickerSize - stickerPadding * 2)
+      : 1;
+    const availableY = rect
+      ? Math.max(1, rect.height - placedStickerSize - stickerPadding * 2)
+      : 1;
+    const pixelX =
       rect && typeof options.clientX === "number"
         ? clamp(
-            options.clientX - rect.left - stickerSize / 2,
-            10,
-            Math.max(10, rect.width - stickerSize - 10),
+            options.clientX - rect.left - dropOffsetX,
+            stickerPadding,
+            stickerPadding + availableX,
           )
-        : 24 + (stickers.length % 4) * 28;
-    const y =
+        : stickerPadding + ((stickers.length % 4) / 4) * availableX;
+    const pixelY =
       rect && typeof options.clientY === "number"
         ? clamp(
-            options.clientY - rect.top - stickerSize / 2,
-            10,
-            Math.max(10, rect.height - stickerSize - 10),
+            options.clientY - rect.top - dropOffsetY,
+            stickerPadding,
+            stickerPadding + availableY,
           )
-        : 82 + (stickers.length % 3) * 26;
+        : stickerPadding + 0.35 * availableY + ((stickers.length % 3) / 8) * availableY;
+    const x = toRelativePosition(pixelX - stickerPadding, availableX);
+    const y = toRelativePosition(pixelY - stickerPadding, availableY);
 
     setSelectedPostId(targetPostId);
     setStickers((current) => [
@@ -120,12 +147,25 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
         id: createStickerId(),
         postId: targetPostId,
         stickerId,
-        x: Math.round(x),
-        y: Math.round(y),
+        x,
+        y,
         rotation: Math.round((Math.random() * 16 - 8) * 10) / 10,
-        size: stickerSize,
+        size: placedStickerSize,
       },
     ]);
+  }
+
+  function showLimitWarning() {
+    setLimitWarning("This post already has 3 stickers. Delete one to add another.");
+
+    if (warningTimeoutRef.current !== null) {
+      window.clearTimeout(warningTimeoutRef.current);
+    }
+
+    warningTimeoutRef.current = window.setTimeout(() => {
+      setLimitWarning("");
+      warningTimeoutRef.current = null;
+    }, 3200);
   }
 
   function moveSticker(stickerId: string, x: number, y: number) {
@@ -136,43 +176,85 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
     );
   }
 
+  function deleteSticker(stickerId: string) {
+    setStickers((current) => current.filter((sticker) => sticker.id !== stickerId));
+  }
+
   function startStickerDrag(
-    event: React.PointerEvent<HTMLButtonElement>,
+    event: React.PointerEvent<HTMLDivElement>,
     stickerId: StickerId,
   ) {
     event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+
+    const visual = event.currentTarget.querySelector<HTMLElement>("[data-sticker-preview]");
+    const visualRect =
+      visual?.getBoundingClientRect() ?? event.currentTarget.getBoundingClientRect();
+    const grabOffset = {
+      x: event.clientX - visualRect.left,
+      y: event.clientY - visualRect.top,
+    };
+    const dropScale = placedStickerSize / Math.max(1, visualRect.width);
+    const dropOffset = {
+      x: grabOffset.x * dropScale,
+      y: grabOffset.y * dropScale,
+    };
+    const ghost = document.createElement("img");
+    const sticker = getStickerOption(stickerId);
 
     const origin = {
       x: event.clientX,
       y: event.clientY,
     };
     let didMove = false;
+    let latestPointer = origin;
 
-    setDragGhost({ stickerId, x: event.clientX, y: event.clientY });
+    ghost.alt = `${sticker.name} sticker`;
+    ghost.draggable = false;
+    ghost.src = sticker.src;
+    ghost.style.height = `${dragGhostSize}px`;
+    ghost.style.left = "0";
+    ghost.style.objectFit = "contain";
+    ghost.style.opacity = "0.96";
+    ghost.style.pointerEvents = "none";
+    ghost.style.position = "fixed";
+    ghost.style.top = "0";
+    ghost.style.transform = `translate3d(${visualRect.left}px, ${visualRect.top}px, 0)`;
+    ghost.style.width = `${dragGhostSize}px`;
+    ghost.style.zIndex = "90";
+    document.body.appendChild(ghost);
 
     function handlePointerMove(moveEvent: PointerEvent) {
+      moveEvent.preventDefault();
+      latestPointer = {
+        x: moveEvent.clientX,
+        y: moveEvent.clientY,
+      };
+
       const delta =
-        Math.abs(moveEvent.clientX - origin.x) + Math.abs(moveEvent.clientY - origin.y);
+        Math.abs(moveEvent.clientX - origin.x) +
+        Math.abs(moveEvent.clientY - origin.y);
       if (delta > 6) {
         didMove = true;
       }
 
-      setDragGhost({
-        stickerId,
-        x: moveEvent.clientX,
-        y: moveEvent.clientY,
-      });
+      ghost.style.transform = `translate3d(${moveEvent.clientX - grabOffset.x}px, ${
+        moveEvent.clientY - grabOffset.y
+      }px, 0)`;
     }
 
-    function finishDrag(upEvent: PointerEvent) {
+    function finishDrag() {
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", finishDrag);
       window.removeEventListener("pointercancel", finishDrag);
-      setDragGhost(null);
+      ghost.remove();
 
       addSticker(stickerId, {
-        clientX: didMove ? upEvent.clientX : undefined,
-        clientY: didMove ? upEvent.clientY : undefined,
+        clientX: didMove ? latestPointer.x : undefined,
+        clientY: didMove ? latestPointer.y : undefined,
+        dropOffsetX: didMove ? dropOffset.x : undefined,
+        dropOffsetY: didMove ? dropOffset.y : undefined,
+        requireDropTarget: didMove,
       });
     }
 
@@ -182,23 +264,19 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
   }
 
   return (
-    <section className="relative">
-      <div className="sticky top-3 z-30 mb-4 flex justify-end">
-        <Button
-          className="min-h-10 px-4 py-2 text-xs shadow-lg shadow-black/20"
-          onClick={() => setStoreOpen((open) => !open)}
-          type="button"
-          variant="secondary"
-        >
-          {storeOpen ? "Hide Stickers" : "Stickers"}
-        </Button>
-      </div>
+    <section className="relative touch-pan-y">
+      {limitWarning ? (
+        <div className="fixed right-3 top-32 z-[80] max-w-[18rem] rounded-2xl border border-amber-200 bg-amber-100 px-4 py-3 text-xs font-bold text-slate-950 shadow-2xl shadow-black/25 sm:right-6 sm:top-36">
+          {limitWarning}
+        </div>
+      ) : null}
 
-      <div className="memory-grid">
+      <div className="memory-grid touch-pan-y pt-4 sm:pt-6">
         {posts.map((post) => (
           <MemoryCard
             key={post.id}
             onSelect={setSelectedPostId}
+            onStickerDelete={deleteSticker}
             onStickerMove={moveSticker}
             post={post}
             selected={selectedPostId === post.id}
@@ -208,27 +286,13 @@ export function InteractiveMemoryBoard({ posts }: { posts: MemoryPost[] }) {
       </div>
 
       <StickerStorePanel
+        maxStickersPerPost={maxStickersPerPost}
         onAddSticker={(stickerId) => addSticker(stickerId)}
         onClose={() => setStoreOpen(false)}
         onStartStickerDrag={startStickerDrag}
         open={storeOpen}
+        selectedStickerCount={(stickersByPost[selectedPostId] ?? []).length}
       />
-
-      {dragGhost ? (
-        <div
-          className="pointer-events-none fixed left-0 top-0 z-50 -translate-x-1/2 -translate-y-1/2"
-          style={{
-            left: dragGhost.x,
-            top: dragGhost.y,
-          }}
-        >
-          <StickerVisual
-            className="scale-110 shadow-[0_28px_58px_rgba(15,23,42,0.38)]"
-            size={76}
-            stickerId={dragGhost.stickerId}
-          />
-        </div>
-      ) : null}
     </section>
   );
 }

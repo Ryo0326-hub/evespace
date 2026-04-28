@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
-import { getManagedEvents } from "@/lib/data/events";
+import { getFriendBoards, getOwnedPrivateBoards } from "@/lib/data/boards";
+import { getFollowCounts } from "@/lib/data/follows";
+import { DashboardBoardCard } from "@/components/boards/DashboardBoardCard";
+import { FriendsBoardsFeed } from "@/components/boards/FriendsBoardsFeed";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/Button";
-import { EventVerificationBadge } from "@/components/events/EventVerificationBadge";
-import { compactDateLocation } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const profile = await ensureUserProfile();
@@ -14,7 +15,11 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const events = await getManagedEvents(profile.clerkUserId);
+  const [myBoards, friendBoards, followCounts] = await Promise.all([
+    getOwnedPrivateBoards(profile.clerkUserId),
+    getFriendBoards(profile),
+    getFollowCounts(profile.id),
+  ]);
 
   return (
     <main className="cosmic-bg min-h-screen px-4 py-8 sm:px-8">
@@ -25,59 +30,64 @@ export default async function DashboardPage() {
               Dashboard
             </p>
             <h1 className="mt-3 text-4xl font-semibold text-white">
-              Your Event Stars
+              Your Memory Space
             </h1>
+            <p className="mt-3 text-sm text-slate-300">
+              {followCounts.following} following · {followCounts.followers} followers
+            </p>
           </div>
-          <LinkButton href="/dashboard/events/new">Create Event Star</LinkButton>
+          <LinkButton className="text-black" href="/boards/new">
+            Create Private Board
+          </LinkButton>
         </header>
 
-        {events.length === 0 ? (
-          <div className="grid gap-5">
-            <EmptyState
-              title="You have not created any event stars yet."
-              description="Create an official event page, then invite attendees to leave memories."
-            />
-            <LinkButton className="w-fit" href="/dashboard/events/new">
-              Create Event Star
-            </LinkButton>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {events.map((event) => (
-              <Card
-                className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center"
-                key={event.id}
-              >
-                <div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <p className="text-xl font-semibold text-white">{event.title}</p>
-                    <EventVerificationBadge status={event.verificationStatus} />
-                  </div>
-                  <p className="mt-2 text-sm text-slate-400">
-                    {compactDateLocation(event.startTime, event.locationName)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <LinkButton href={`/events/${event.slug}`} variant="ghost">
-                    View
-                  </LinkButton>
-                  <LinkButton
-                    href={`/dashboard/events/${event.id}/edit`}
-                    variant="secondary"
-                  >
-                    Edit
-                  </LinkButton>
-                  <LinkButton
-                    href={`/dashboard/events/${event.id}/moderation`}
-                    variant="secondary"
-                  >
-                    Moderate
-                  </LinkButton>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
+        <div className="grid gap-8">
+          <section className="grid gap-4">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-2xl font-semibold text-white">My Memory Boards</h2>
+              <LinkButton href="/boards/new" variant="ghost">
+                New Board
+              </LinkButton>
+            </div>
+            {myBoards.length === 0 ? (
+              <div className="grid gap-5">
+                <EmptyState
+                  title="You have not created any memory boards yet."
+                  description="Create a private board for a trip, event, or memory you want to keep."
+                />
+                <LinkButton className="w-fit text-black" href="/boards/new">
+                  Create Private Board
+                </LinkButton>
+              </div>
+            ) : (
+              <div className="grid gap-4">
+                {myBoards.map((board) => (
+                  <DashboardBoardCard board={board} canDelete key={board.id} />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="grid gap-4">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-2xl font-semibold text-white">
+                Friends&apos; Memory Boards
+              </h2>
+              <LinkButton href="/dashboard/friends" variant="ghost">
+                View Friends
+              </LinkButton>
+            </div>
+            <FriendsBoardsFeed boards={friendBoards} />
+          </section>
+
+          <Card>
+            <h2 className="text-xl font-semibold text-white">Following / Followers</h2>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
+              You are following {followCounts.following} people and have{" "}
+              {followCounts.followers} followers.
+            </p>
+          </Card>
+        </div>
       </div>
     </main>
   );

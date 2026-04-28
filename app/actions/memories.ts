@@ -3,26 +3,51 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
-import { requireEventAdmin } from "@/lib/auth/permissions";
+import { requireBoardAdmin } from "@/lib/auth/permissions";
+import { canPostToBoard, getAccessibleBoardById } from "@/lib/data/boards";
 import { getEventBySlug } from "@/lib/data/events";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { acceptedImageTypes, maxUploadSizeBytes } from "@/lib/constants";
-import type { FrameStyle, MemoryPostStatus, StickyNoteStyle } from "@/types/evespace";
+import type {
+  MemoryPostStatus,
+  StickerPlacement,
+  StickerSelection,
+} from "@/types/evespace";
 
 export async function createMemoryPostAction(
   eventSlug: string,
   formData: FormData,
+) {
+  const event = await getEventBySlug(eventSlug);
+  if (!event) {
+    throw new Error("Official event was not found.");
+  }
+
+  await createBoardMemoryPost(event.id, formData, `/events/${event.slug}/board`);
+}
+
+export async function createPrivateBoardMemoryPostAction(
+  boardId: string,
+  formData: FormData,
+) {
+  await createBoardMemoryPost(boardId, formData, `/boards/${boardId}`);
+}
+
+async function createBoardMemoryPost(
+  boardId: string,
+  formData: FormData,
+  returnPath: string,
 ) {
   const profile = await ensureUserProfile();
   if (!profile) {
     redirect("/login");
   }
 
-  const event = await getEventBySlug(eventSlug);
+  const board = await getAccessibleBoardById(boardId, profile);
   const photo = formData.get("photo");
   const supabase = getSupabaseAdminClient();
 
-  if (!event || !supabase) {
+  if (!board || !supabase || !(await canPostToBoard(board, profile))) {
     throw new Error("Memory posting is not configured.");
   }
 
@@ -39,7 +64,7 @@ export async function createMemoryPostAction(
   }
 
   const safeName = photo.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-  const storagePath = `${event.id}/${profile.clerkUserId}/${Date.now()}-${safeName}`;
+  const storagePath = `${board.id}/${profile.clerkUserId}/${Date.now()}-${safeName}`;
   const bytes = Buffer.from(await photo.arrayBuffer());
   const { error: uploadError } = await supabase.storage
     .from("memory-photos")
@@ -55,10 +80,11 @@ export async function createMemoryPostAction(
   const {
     data: { publicUrl },
   } = supabase.storage.from("memory-photos").getPublicUrl(storagePath);
-  const status = event.moderationMode === "post_first" ? "approved" : "pending";
+  const status = "approved";
 
   const { error } = await supabase.from("memory_posts").insert({
-    event_id: event.id,
+    board_id: board.id,
+    event_id: board.boardType === "official_event" ? board.id : null,
     profile_id: profile.id,
     clerk_user_id: profile.clerkUserId,
     author_display_name:
@@ -69,23 +95,22 @@ export async function createMemoryPostAction(
     image_url: publicUrl,
     storage_path: storagePath,
     caption: clean(formData.get("caption")),
-    frame_style: readFrameStyle(formData),
-    sticky_note_style: readStickyNoteStyle(formData),
+    stickers: readStickers(formData),
     status,
-    rotation: Math.round((Math.random() * 4 - 2) * 10) / 10,
+    frame_style: "none",
+    sticky_note_style: "default",
+    rotation: 0,
   });
 
   if (error) {
     throw new Error(error.message);
   }
 
-  revalidatePath(`/events/${event.slug}`);
-  revalidatePath(`/events/${event.slug}/board`);
-  redirect(
-    `/events/${event.slug}/board?posted=${
-      status === "pending" ? "pending" : "approved"
-    }`,
-  );
+  revalidatePath(returnPath);
+  if (board.boardType === "official_event") {
+    revalidatePath(`/events/${board.slug}`);
+  }
+  redirect(`${returnPath}?posted=approved`);
 }
 
 export async function moderatePostAction(formData: FormData) {
@@ -103,7 +128,7 @@ export async function moderatePostAction(formData: FormData) {
 
   const { data: post, error: postError } = await supabase
     .from("memory_posts")
-    .select("event_id")
+    .select("board_id")
     .eq("id", postId)
     .single();
 
@@ -111,7 +136,7 @@ export async function moderatePostAction(formData: FormData) {
     throw new Error(postError.message);
   }
 
-  await requireEventAdmin(String(post.event_id));
+  await requireBoardAdmin(String(post.board_id));
 
   const { error } = await supabase
     .from("memory_posts")
@@ -125,30 +150,49 @@ export async function moderatePostAction(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
-function readFrameStyle(formData: FormData): FrameStyle {
-  const value = String(formData.get("frameStyle") ?? "none");
+function readStickers(formData: FormData): StickerSelection[] {
+  const raw = String(formData.get("stickers") ?? "[]");
+  let parsed: unknown;
 
-  if (
-    value === "polaroid" ||
-    value === "soft_rounded" ||
-    value === "film" ||
-    value === "festival" ||
-    value === "space_glow"
-  ) {
-    return value;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return [];
   }
 
-  return "none";
-}
-
-function readStickyNoteStyle(formData: FormData): StickyNoteStyle {
-  const value = String(formData.get("stickyNoteStyle") ?? "default");
-
-  if (value === "yellow" || value === "pink" || value === "blue" || value === "glass") {
-    return value;
+  if (!Array.isArray(parsed)) {
+    return [];
   }
 
-  return "default";
+  const usedPlacements = new Set<string>();
+
+  return parsed.flatMap((item) => {
+    if (!item || typeof item !== "object") {
+      return [];
+    }
+
+    const selection = item as Record<string, unknown>;
+    const placement = selection.placement;
+
+    if (
+      typeof selection.stickerId !== "string" ||
+      (placement !== "top_left" &&
+        placement !== "top_right" &&
+        placement !== "bottom_left" &&
+        placement !== "bottom_right") ||
+      usedPlacements.has(placement)
+    ) {
+      return [];
+    }
+
+    usedPlacements.add(placement);
+    return [
+      {
+        stickerId: selection.stickerId,
+        placement: placement as StickerPlacement,
+      },
+    ];
+  }).slice(0, 3);
 }
 
 function clean(value: FormDataEntryValue | null) {

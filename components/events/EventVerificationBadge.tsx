@@ -1,14 +1,16 @@
 import { cn } from "@/lib/utils";
-import type { EventVerificationStatus } from "@/types/evespace";
+import type { VerificationStatus } from "@/types/evespace";
 
-const labels: Record<EventVerificationStatus, string> = {
+const labels: Record<VerificationStatus, string> = {
+  not_applicable: "Private Board",
   verified: "Verified Event",
   pending_review: "Verification Pending",
   unverified: "Unverified Event",
   rejected: "Unverified Event",
 };
 
-const styles: Record<EventVerificationStatus, string> = {
+const styles: Record<VerificationStatus, string> = {
+  not_applicable: "border-slate-200/40 bg-slate-300/15 text-slate-100",
   verified: "border-emerald-200/40 bg-emerald-300/15 text-emerald-100",
   pending_review: "border-cyan-200/40 bg-cyan-300/15 text-cyan-100",
   unverified: "border-amber-200/40 bg-amber-300/15 text-amber-100",
@@ -18,7 +20,7 @@ const styles: Record<EventVerificationStatus, string> = {
 export function EventVerificationBadge({
   status,
 }: {
-  status: EventVerificationStatus;
+  status: VerificationStatus;
 }) {
   return (
     <span
@@ -33,7 +35,7 @@ export function EventVerificationBadge({
   );
 }
 
-function getDescription(status: EventVerificationStatus) {
+function getDescription(status: VerificationStatus) {
   if (status === "verified") {
     return "This event has been reviewed by Evespace.";
   }

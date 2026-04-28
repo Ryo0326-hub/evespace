@@ -1,3 +1,5 @@
-import DashboardPage from "@/app/dashboard/page";
+import { redirect } from "next/navigation";
 
-export default DashboardPage;
+export default function DashboardEventsPage() {
+  redirect("/dashboard/official-events");
+}

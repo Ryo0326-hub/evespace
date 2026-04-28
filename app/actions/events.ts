@@ -2,8 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
-import { requireEventAdmin } from "@/lib/auth/permissions";
+import { requireBoardAdmin, requirePlatformAdmin } from "@/lib/auth/permissions";
 import { createEvent, updateEvent } from "@/lib/data/events";
 import { replaceScheduleItems, upsertScheduleItems } from "@/lib/data/schedules";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -16,10 +15,7 @@ import type {
 } from "@/types/evespace";
 
 export async function createEventAction(formData: FormData) {
-  const profile = await ensureUserProfile();
-  if (!profile) {
-    redirect("/login");
-  }
+  const profile = await requirePlatformAdmin();
 
   const input = readEventInput(formData);
   const result = await createEvent(input, profile);
@@ -28,11 +24,12 @@ export async function createEventAction(formData: FormData) {
     await upsertScheduleItems(result.data.id, readScheduleText(formData));
     revalidatePath("/");
     revalidatePath("/dashboard");
-    redirect(`/dashboard/events/${result.data.id}/edit`);
+    revalidatePath("/admin/official-events");
+    redirect(`/admin/official-events/${result.data.id}/edit`);
   }
 
   redirect(
-    `/dashboard/events/new?error=${encodeURIComponent(
+    `/admin/official-events/new?error=${encodeURIComponent(
       result.error ?? "Save failed",
     )}`,
   );
@@ -40,7 +37,7 @@ export async function createEventAction(formData: FormData) {
 
 export async function updateEventAction(formData: FormData) {
   const eventId = String(formData.get("eventId") ?? "");
-  await requireEventAdmin(eventId);
+  await requireBoardAdmin(eventId);
 
   const input = readEventInput(formData);
   const result = await updateEvent(eventId, input);
@@ -49,12 +46,13 @@ export async function updateEventAction(formData: FormData) {
     await replaceScheduleItems(eventId, readScheduleText(formData));
     revalidatePath("/");
     revalidatePath("/dashboard");
+    revalidatePath("/admin/official-events");
     revalidatePath(`/events/${result.data.slug}`);
-    redirect(`/dashboard/events/${eventId}/edit?saved=1`);
+    redirect(`/admin/official-events/${eventId}/edit?saved=1`);
   }
 
   redirect(
-    `/dashboard/events/${eventId}/edit?error=${encodeURIComponent(
+    `/admin/official-events/${eventId}/edit?error=${encodeURIComponent(
       result.error ?? "Save failed",
     )}`,
   );
@@ -62,7 +60,7 @@ export async function updateEventAction(formData: FormData) {
 
 export async function submitEventVerificationAction(formData: FormData) {
   const eventId = String(formData.get("eventId") ?? "");
-  await requireEventAdmin(eventId);
+  await requireBoardAdmin(eventId);
 
   const supabase = getSupabaseAdminClient();
   if (!supabase) {
@@ -70,7 +68,7 @@ export async function submitEventVerificationAction(formData: FormData) {
   }
 
   const { error } = await supabase
-    .from("events")
+    .from("boards")
     .update({
       verification_status: "pending_review",
       verification_requested_at: new Date().toISOString(),
@@ -83,7 +81,8 @@ export async function submitEventVerificationAction(formData: FormData) {
   }
 
   revalidatePath("/dashboard");
-  redirect(`/dashboard/events/${eventId}/edit?verification=pending`);
+  revalidatePath("/admin/official-events");
+  redirect(`/admin/official-events/${eventId}/edit?verification=pending`);
 }
 
 function readEventInput(formData: FormData): EventInput {
@@ -106,6 +105,7 @@ function readEventInput(formData: FormData): EventInput {
     boardBackgroundTheme: readBoardTheme(formData),
     moderationMode: readModerationMode(formData),
     visibility: "public",
+    sharingScope: "public",
     starX: star.x,
     starY: star.y,
     starSize: 1,
@@ -142,19 +142,18 @@ function readScheduleText(formData: FormData) {
 }
 
 function readBoardTheme(formData: FormData): BoardBackgroundTheme {
-  const value = String(formData.get("boardBackgroundTheme") ?? "space");
+  const value = String(formData.get("boardBackgroundTheme") ?? "soft_cream");
 
   if (
-    value === "milky_way" ||
-    value === "festival_night" ||
-    value === "scrapbook" ||
-    value === "pastel_sky" ||
-    value === "dark_minimal"
+    value === "pale_blue" ||
+    value === "pale_pink" ||
+    value === "pale_green" ||
+    value === "pale_lavender"
   ) {
     return value;
   }
 
-  return "space";
+  return "soft_cream";
 }
 
 function readModerationMode(formData: FormData): ModerationMode {

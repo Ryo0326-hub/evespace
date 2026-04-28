@@ -47,8 +47,8 @@ export default async function CreateMemoryPostPage({
   const action = createMemoryPostAction.bind(null, event.slug);
 
   return (
-    <main className="cosmic-bg min-h-screen px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
-      <div className="mx-auto max-w-5xl">
+    <main className="cosmic-bg min-h-screen overflow-x-hidden px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+      <div className="mx-auto w-full max-w-5xl min-w-0">
         <nav>
           <LinkButton className="w-full sm:w-auto" href={`/events/${event.slug}`} variant="ghost">
             Back to Event
@@ -59,16 +59,16 @@ export default async function CreateMemoryPostPage({
           <p className="text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
             Leave a Memory
           </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:text-5xl">
+          <h1 className="mt-3 break-words text-3xl font-semibold tracking-tight text-white sm:text-5xl">
             Post to {event.title}
           </h1>
           <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
-            Upload a photo, add a note, choose a frame, and preview your memory
-            card before it joins the board.
+            Upload a photo, add a plain caption, choose optional stickers, and
+            preview your memory card before it joins the board.
           </p>
         </header>
 
-        <MemoryPostForm action={action} event={event} />
+        <MemoryPostForm action={action} board={event} />
       </div>
     </main>
   );

@@ -1,6 +1,16 @@
 export type UserRole = "user" | "admin" | "super_admin";
 
-export type EventVisibility = "public" | "unlisted" | "private";
+export type BoardType = "official_event" | "private_memory";
+
+export type BoardVisibility = "public" | "unlisted" | "private";
+
+export type EventVisibility = BoardVisibility;
+
+export type BoardSharingScope =
+  | "owner_only"
+  | "followers"
+  | "selected_users"
+  | "public";
 
 export type ModerationMode = "pre_approval" | "post_first";
 
@@ -8,19 +18,21 @@ export type MemoryPostStatus = "pending" | "approved" | "rejected" | "removed";
 
 export type AppUserRole = "user" | "platform_admin" | "super_admin";
 
-export type EventVerificationStatus =
+export type VerificationStatus =
+  | "not_applicable"
   | "unverified"
   | "pending_review"
   | "verified"
   | "rejected";
 
+export type EventVerificationStatus = Exclude<VerificationStatus, "not_applicable">;
+
 export type BoardBackgroundTheme =
-  | "space"
-  | "milky_way"
-  | "festival_night"
-  | "scrapbook"
-  | "pastel_sky"
-  | "dark_minimal";
+  | "soft_cream"
+  | "pale_blue"
+  | "pale_pink"
+  | "pale_green"
+  | "pale_lavender";
 
 export type FrameStyle =
   | "none"
@@ -37,33 +49,28 @@ export type StickyNoteStyle =
   | "blue"
   | "glass";
 
-export type StickerCategoryId = "cosmic" | "festival" | "cute" | "love";
+export type StickerCategory = "pixel" | "doodle" | "clay";
 
-export type StickerId =
-  | "starburst"
-  | "moon"
-  | "planet"
-  | "ticket"
-  | "confetti"
-  | "camera"
-  | "cloud"
-  | "flower"
-  | "heart"
-  | "ribbon";
+export type StickerId = string;
 
-export type StickerOption = {
+export type Sticker = {
   id: StickerId;
-  categoryId: StickerCategoryId;
   name: string;
-  description: string;
-  label: string;
-  accentClassName: string;
+  category: StickerCategory;
+  src: string;
 };
 
-export type StickerCategory = {
-  id: StickerCategoryId;
-  name: string;
-  description: string;
+export type StickerOption = Sticker;
+
+export type StickerPlacement =
+  | "top_left"
+  | "top_right"
+  | "bottom_left"
+  | "bottom_right";
+
+export type StickerSelection = {
+  stickerId: StickerId;
+  placement: StickerPlacement;
 };
 
 export type PlacedSticker = {
@@ -76,12 +83,16 @@ export type PlacedSticker = {
   size: number;
 };
 
-export type Event = {
+export type Board = {
   id: string;
+  boardType: BoardType;
   title: string;
   slug: string;
   description: string | null;
   category: string | null;
+  ownerProfileId: string | null;
+  ownerClerkUserId: string;
+  ownerDisplayName: string | null;
   startTime: string | null;
   endTime: string | null;
   locationName: string | null;
@@ -93,7 +104,8 @@ export type Event = {
   goodsDescription: string | null;
   boardBackgroundTheme: BoardBackgroundTheme;
   moderationMode: ModerationMode;
-  visibility: EventVisibility;
+  visibility: BoardVisibility;
+  sharingScope: BoardSharingScope;
   starX: number;
   starY: number;
   starSize: number;
@@ -101,7 +113,7 @@ export type Event = {
   createdBy: string | null;
   createdByProfileId: string | null;
   createdByClerkUserId: string | null;
-  verificationStatus: EventVerificationStatus;
+  verificationStatus: VerificationStatus;
   verificationRequestedAt: string | null;
   verificationReviewedAt: string | null;
   verificationReviewedBy: string | null;
@@ -113,8 +125,11 @@ export type Event = {
   updatedAt: string;
 };
 
+export type Event = Board;
+
 export type EventSchedule = {
   id: string;
+  boardId: string;
   eventId: string;
   title: string;
   description: string | null;
@@ -128,6 +143,7 @@ export type EventSchedule = {
 
 export type MemoryPost = {
   id: string;
+  boardId: string | null;
   eventId: string;
   userId: string | null;
   profileId: string | null;
@@ -136,6 +152,7 @@ export type MemoryPost = {
   imageUrl: string;
   storagePath: string | null;
   caption: string | null;
+  stickers: StickerSelection[];
   frameStyle: FrameStyle;
   stickyNoteStyle: StickyNoteStyle;
   stickerId: string | null;
@@ -174,7 +191,9 @@ export type EventInput = {
   goodsDescription?: string | null;
   boardBackgroundTheme?: BoardBackgroundTheme;
   moderationMode?: ModerationMode;
-  visibility?: EventVisibility;
+  visibility?: BoardVisibility;
+  sharingScope?: BoardSharingScope;
+  boardType?: BoardType;
   starX?: number;
   starY?: number;
   starSize?: number;
@@ -182,8 +201,10 @@ export type EventInput = {
   officialWebsiteUrl?: string | null;
   officialSocialUrl?: string | null;
   organizerEmail?: string | null;
-  verificationStatus?: EventVerificationStatus;
+  verificationStatus?: VerificationStatus;
 };
+
+export type BoardInput = EventInput;
 
 export type Profile = {
   id: string;
@@ -194,4 +215,26 @@ export type Profile = {
   role: AppUserRole;
   createdAt: string;
   updatedAt: string;
+};
+
+export type FollowCounts = {
+  followers: number;
+  following: number;
+};
+
+export type NotificationType = "followed_you" | "you_followed";
+
+export type AppNotification = {
+  id: string;
+  recipientProfileId: string | null;
+  recipientClerkUserId: string;
+  actorProfileId: string | null;
+  actorClerkUserId: string | null;
+  actorDisplayName: string | null;
+  notificationType: NotificationType;
+  title: string;
+  body: string | null;
+  href: string | null;
+  readAt: string | null;
+  createdAt: string;
 };

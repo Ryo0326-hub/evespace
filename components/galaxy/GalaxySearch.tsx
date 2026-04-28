@@ -7,10 +7,12 @@ import type { Event } from "@/types/evespace";
 export function GalaxySearch({
   events,
   disabled,
+  personalized = false,
   onSelect,
 }: {
   events: Event[];
   disabled?: boolean;
+  personalized?: boolean;
   onSelect: (event: Event) => void;
 }) {
   const [query, setQuery] = useState("");
@@ -48,7 +50,7 @@ export function GalaxySearch({
       }`}
     >
       <label className="sr-only" htmlFor="event-search">
-        Search for an event in the galaxy
+        Search the galaxy
       </label>
       <div className="flex items-center gap-3 rounded-full border border-white/10 bg-white/10 px-5 py-4">
         <span className="text-cyan-100" aria-hidden="true">
@@ -81,7 +83,11 @@ export function GalaxySearch({
             }
           }}
           className="w-full bg-transparent text-base text-white outline-none placeholder:text-slate-400"
-          placeholder="Search for an event in the galaxy..."
+          placeholder={
+            personalized
+              ? "Search official, personal, and friends' boards..."
+              : "Search official events in the galaxy..."
+          }
           autoComplete="off"
         />
       </div>
@@ -109,12 +115,16 @@ export function GalaxySearch({
                 <span className="w-fit rounded-full border border-purple-200/20 bg-purple-200/10 px-2.5 py-1 text-xs text-purple-100">
                   {event.category}
                 </span>
+              ) : event.boardType === "private_memory" ? (
+                <span className="w-fit rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2.5 py-1 text-xs text-cyan-100">
+                  Private memory board
+                </span>
               ) : null}
             </button>
           ))
         ) : (
           <p className="px-5 py-5 text-sm text-slate-300">
-            No event found in this galaxy yet.
+            No board found in this galaxy yet.
           </p>
         )}
       </div>

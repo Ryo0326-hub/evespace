@@ -109,7 +109,7 @@ export function EventForm({
           <Field label="Board background theme">
             <Select
               name="boardBackgroundTheme"
-              defaultValue={event?.boardBackgroundTheme ?? "space"}
+              defaultValue={event?.boardBackgroundTheme ?? "soft_cream"}
             >
               {boardThemes.map((theme) => (
                 <option key={theme} value={theme}>
