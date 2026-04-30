@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MemoryCard } from "@/components/board/MemoryCard";
 import { StickerStorePanel } from "@/components/board/StickerStorePanel";
 import { getStickerOption } from "@/components/board/StickerVisual";
+import { EmptyState } from "@/components/ui/EmptyState";
 import type { MemoryPost, PlacedSticker, StickerId } from "@/types/evespace";
 
 const maxStickersPerPost = 3;
@@ -380,20 +381,27 @@ export function InteractiveMemoryBoard({
       ) : null}
 
       <div className="memory-grid touch-pan-y pt-4 sm:pt-6">
-        {posts.map((post) => (
-          <MemoryCard
-            key={post.id}
-            canEditStickers={Boolean(
-              viewerProfileId && post.profileId === viewerProfileId,
-            )}
-            onSelect={handleSelectPost}
-            onStickerDelete={deleteSticker}
-            onStickerMove={moveSticker}
-            post={post}
-            selected={selectedPostId === post.id && ownsPost(post.id)}
-            stickers={stickersByPost[post.id] ?? []}
+        {posts.length === 0 ? (
+          <EmptyState
+            description="Be the first to leave a star in this event's sky."
+            title="No memories have been posted yet."
           />
-        ))}
+        ) : (
+          posts.map((post) => (
+            <MemoryCard
+              key={post.id}
+              canEditStickers={Boolean(
+                viewerProfileId && post.profileId === viewerProfileId,
+              )}
+              onSelect={handleSelectPost}
+              onStickerDelete={deleteSticker}
+              onStickerMove={moveSticker}
+              post={post}
+              selected={selectedPostId === post.id && ownsPost(post.id)}
+              stickers={stickersByPost[post.id] ?? []}
+            />
+          ))
+        )}
       </div>
 
       <StickerStorePanel

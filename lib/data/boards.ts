@@ -240,6 +240,39 @@ export async function getFriendBoards(profile: Profile): Promise<Board[]> {
   return data.map(mapBoard);
 }
 
+export async function getUserSharedBoards(userId: string, viewerProfile: Profile): Promise<Board[]> {
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data: follow } = await supabase
+    .from("user_follows")
+    .select("id")
+    .eq("follower_profile_id", viewerProfile.id)
+    .eq("following_profile_id", userId)
+    .maybeSingle();
+
+  const isFollowing = Boolean(follow);
+  const allowedScopes = isFollowing ? ["followers", "public"] : ["public"];
+
+  const { data, error } = await supabase
+    .from("boards")
+    .select(BOARD_SELECT)
+    .eq("board_type", "private_memory")
+    .eq("owner_profile_id", userId)
+    .in("sharing_scope", allowedScopes)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    logBoardDataError("Failed to load user shared boards", error);
+    return [];
+  }
+
+  return data.map(mapBoard);
+}
+
 export async function getGalaxyBoardsForProfile(profile: Profile): Promise<Board[]> {
   const [officialBoards, ownedBoards, friendBoards] = await Promise.all([
     getPublicOfficialBoards(),

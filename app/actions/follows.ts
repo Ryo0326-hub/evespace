@@ -47,6 +47,19 @@ export async function followUserAction(formData: FormData) {
     return;
   }
 
+  const { count, error: countError } = await supabase
+    .from("user_follows")
+    .select("*", { count: "exact", head: true })
+    .eq("follower_profile_id", profile.id);
+
+  if (countError) {
+    throw new Error(countError.message);
+  }
+
+  if (count !== null && count >= 10) {
+    throw new Error("You can only follow up to 10 friends.");
+  }
+
   const { error: followError } = await supabase.from("user_follows").insert(
     {
       follower_profile_id: profile.id,

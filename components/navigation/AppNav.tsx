@@ -35,19 +35,64 @@ export function AppNav() {
             </SignUpButton>
           </Show>
           <Show when="signed-in">
-            <Link className="hover:text-white" href="/explore">
-              Explore
+            <Link className="text-white hover:text-cyan-200 transition" href="/explore" title="Explore">
+              <svg
+                fill="none"
+                height="20"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                width="20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
             </Link>
             <Link className="hidden hover:text-white sm:inline" href="/dashboard">
               Dashboard
             </Link>
-            <Link className="hidden hover:text-white sm:inline" href="/notifications">
-              Notifications
+            <Link className="text-white hover:text-cyan-200 transition" href="/notifications" title="Notifications">
+              <svg
+                fill="none"
+                height="20"
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                width="20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
             </Link>
-            <Link className="hover:text-white" href="/profile">
-              Profile
-            </Link>
-            <UserButton />
+            <UserButton>
+              <UserButton.MenuItems>
+                <UserButton.Link
+                  href="/profile"
+                  label="Profile"
+                  labelIcon={
+                    <svg
+                      fill="none"
+                      height="16"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      viewBox="0 0 24 24"
+                      width="16"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  }
+                />
+              </UserButton.MenuItems>
+            </UserButton>
           </Show>
         </nav>
       </div>

@@ -1,18 +1,32 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { FollowButton } from "@/components/social/FollowButton";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
 import { getExploreProfiles } from "@/lib/data/profiles";
+import { SearchBar } from "@/components/explore/SearchBar";
 
-export default async function ExplorePage() {
+export default async function ExplorePage(props: {
+  searchParams?: Promise<{ q?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const query = searchParams?.q?.toLowerCase() || "";
   const profile = await ensureUserProfile();
 
   if (!profile) {
     redirect("/login");
   }
 
-  const profiles = await getExploreProfiles(profile);
+  let profiles = await getExploreProfiles(profile);
+
+  if (query) {
+    profiles = profiles.filter(
+      (p) =>
+        p.displayName?.toLowerCase().includes(query) ||
+        p.email?.toLowerCase().includes(query),
+    );
+  }
 
   return (
     <main className="cosmic-bg min-h-screen px-4 py-8 sm:px-8">
@@ -22,13 +36,15 @@ export default async function ExplorePage() {
             Explore
           </p>
           <h1 className="mt-3 text-4xl font-semibold text-white">
-            Discover people to follow
+            Find your circle
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
             Follow friends to see memory boards they share with followers in your
             galaxy.
           </p>
         </header>
+
+        <SearchBar />
 
         {profiles.length === 0 ? (
           <EmptyState
@@ -42,7 +58,10 @@ export default async function ExplorePage() {
                 className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
                 key={person.id}
               >
-                <div className="flex min-w-0 items-center gap-4">
+                <Link
+                  className="flex min-w-0 items-center gap-4 transition-opacity hover:opacity-80"
+                  href={`/user/${person.id}`}
+                >
                   <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-cyan-200/15 text-sm font-bold text-cyan-100">
                     {getInitials(person.displayName ?? person.email)}
                   </div>
@@ -54,7 +73,7 @@ export default async function ExplorePage() {
                       <p className="truncate text-sm text-slate-400">{person.email}</p>
                     ) : null}
                   </div>
-                </div>
+                </Link>
                 <FollowButton
                   following={person.isFollowing}
                   followingProfileId={person.id}

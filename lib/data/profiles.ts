@@ -46,6 +46,29 @@ export async function getExploreProfiles(profile: Profile): Promise<ExploreProfi
   });
 }
 
+export async function getProfileById(profileId: string): Promise<Profile | null> {
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", profileId)
+    .maybeSingle();
+
+  if (error || !data) {
+    if (error) {
+      logProfileDataError("Failed to load profile by id", error);
+    }
+    return null;
+  }
+
+  return mapProfile(data);
+}
+
 function logProfileDataError(message: string, error: unknown) {
   const next = error as { code?: string; message?: string } | null;
 

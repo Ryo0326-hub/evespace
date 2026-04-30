@@ -144,8 +144,8 @@ export function StickerStorePanel({
         transform: `translate3d(${panelOffset.x}px, ${panelOffset.y}px, 0)`,
       }}
     >
-      <section className="max-h-[35vh] overflow-hidden rounded-[1.35rem] border border-black/10 bg-white/95 shadow-[0_18px_54px_rgba(0,0,0,0.26)] backdrop-blur-xl sm:max-h-[28rem] sm:rounded-[1.5rem]">
-        <header className="grid gap-3 border-b border-black/10 px-3 py-3">
+      <section className="flex flex-col max-h-[35vh] overflow-hidden rounded-[1.35rem] border border-black/10 bg-white/95 shadow-[0_18px_54px_rgba(0,0,0,0.26)] backdrop-blur-xl sm:max-h-[28rem] sm:rounded-[1.5rem]">
+        <header className="shrink-0 grid gap-3 border-b border-black/10 px-3 py-3">
           <div className="flex items-start justify-between gap-3">
             <div
               aria-label="Drag sticker store"
@@ -189,7 +189,7 @@ export function StickerStorePanel({
           </p>
         ) : null}
 
-        <div className="max-h-[calc(35vh-3.2rem)] overflow-y-auto p-3 pb-5 sm:max-h-[calc(28rem-3.2rem)]">
+        <div className="flex-1 overflow-y-auto p-3 pb-10">
           <label className="grid gap-1.5 text-sm text-black">
             <span className="text-[0.65rem] font-black uppercase tracking-[0.18em] text-black">
               Search
