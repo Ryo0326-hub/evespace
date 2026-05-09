@@ -19,9 +19,6 @@ export function AppNav() {
           EVESPACE
         </Link>
         <nav className="flex items-center gap-2 text-sm text-slate-200 sm:gap-4">
-          <Link className="hidden hover:text-white sm:inline" href="/">
-            Galaxy
-          </Link>
           <Show when="signed-out">
             <SignInButton mode="modal">
               <button className="rounded-full border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/15">
@@ -51,9 +48,6 @@ export function AppNav() {
                 <path d="m21 21-4.3-4.3" />
               </svg>
             </Link>
-            <Link className="hidden hover:text-white sm:inline" href="/dashboard">
-              Dashboard
-            </Link>
             <Link className="text-white hover:text-cyan-200 transition" href="/notifications" title="Notifications">
               <svg
                 fill="none"
@@ -73,7 +67,7 @@ export function AppNav() {
               <UserButton.MenuItems>
                 <UserButton.Link
                   href="/profile"
-                  label="Profile"
+                  label="Your Planet"
                   labelIcon={
                     <svg
                       fill="none"
@@ -86,11 +80,14 @@ export function AppNav() {
                       width="16"
                       xmlns="http://www.w3.org/2000/svg"
                     >
-                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
+                      <circle cx="12" cy="12" r="7" />
+                      <path d="M3 12c2.2-2.2 5.2-3.5 9-3.5s6.8 1.3 9 3.5" />
+                      <path d="M4.5 16.5c2.1 1.2 4.6 1.8 7.5 1.8s5.4-.6 7.5-1.8" />
                     </svg>
                   }
                 />
+                <UserButton.Action label="manageAccount" />
+                <UserButton.Action label="signOut" />
               </UserButton.MenuItems>
             </UserButton>
           </Show>

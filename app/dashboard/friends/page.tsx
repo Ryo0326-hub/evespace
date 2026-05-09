@@ -1,13 +1,23 @@
 import { redirect } from "next/navigation";
+import {
+  acceptFollowRequestAction,
+  blockUserAction,
+  denyFollowRequestAction,
+  removeFollowerAction,
+  reportUserAction,
+  unfollowUserAction,
+} from "@/app/actions/follows";
 import { FriendsBoardsFeed } from "@/components/boards/FriendsBoardsFeed";
 import { Card } from "@/components/ui/Card";
-import { LinkButton } from "@/components/ui/Button";
+import { Button, LinkButton } from "@/components/ui/Button";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
 import { getFriendBoards } from "@/lib/data/boards";
 import {
   getFollowerProfiles,
+  getIncomingFollowRequests,
   getFollowingProfiles,
 } from "@/lib/data/follows";
+import type { FollowRequest, Profile } from "@/types/evespace";
 
 export default async function DashboardFriendsPage() {
   const profile = await ensureUserProfile();
@@ -16,10 +26,11 @@ export default async function DashboardFriendsPage() {
     redirect("/login");
   }
 
-  const [friendBoards, following, followers] = await Promise.all([
+  const [friendBoards, following, followers, followRequests] = await Promise.all([
     getFriendBoards(profile),
     getFollowingProfiles(profile.id),
     getFollowerProfiles(profile.id),
+    getIncomingFollowRequests(profile.id),
   ]);
 
   return (
@@ -42,21 +53,74 @@ export default async function DashboardFriendsPage() {
           <FriendsBoardsFeed boards={friendBoards} />
         </section>
 
+        <FollowRequestList requests={followRequests} />
+
         <div className="grid gap-4 md:grid-cols-2">
-          <ProfileList title="Following" profiles={following} />
-          <ProfileList title="Followers" profiles={followers} />
+          <ProfileList actionMode="following" title="Following" profiles={following} />
+          <ProfileList actionMode="followers" title="Followers" profiles={followers} />
         </div>
       </div>
     </main>
   );
 }
 
+function FollowRequestList({ requests }: { requests: FollowRequest[] }) {
+  return (
+    <Card>
+      <h2 className="text-xl font-semibold text-white">Follow requests</h2>
+      <div className="mt-4 grid gap-3">
+        {requests.map((request) => {
+          const displayName =
+            request.requester.displayName ?? request.requester.email ?? "Evespace User";
+
+          return (
+            <div
+              className="grid gap-3 rounded-2xl border border-cyan-200/20 bg-cyan-200/[0.08] px-4 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+              key={request.id}
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-cyan-100">
+                  {displayName} requested to follow you.
+                </p>
+                <p className="mt-1 text-xs text-slate-300">
+                  Accept or deny this request before they can see follower-only boards.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <form action={acceptFollowRequestAction}>
+                  <input name="requestId" type="hidden" value={request.id} />
+                  <input name="returnPath" type="hidden" value="/dashboard/friends" />
+                  <Button type="submit">Accept</Button>
+                </form>
+                <form action={denyFollowRequestAction}>
+                  <input name="requestId" type="hidden" value={request.id} />
+                  <input name="returnPath" type="hidden" value="/dashboard/friends" />
+                  <Button type="submit" variant="secondary">
+                    Deny
+                  </Button>
+                </form>
+              </div>
+            </div>
+          );
+        })}
+        {requests.length === 0 ? (
+          <p className="text-sm text-slate-300">
+            No pending follow requests.
+          </p>
+        ) : null}
+      </div>
+    </Card>
+  );
+}
+
 function ProfileList({
+  actionMode,
   title,
   profiles,
 }: {
+  actionMode: "following" | "followers";
   title: string;
-  profiles: Array<{ id: string; displayName: string | null; email: string | null }>;
+  profiles: Profile[];
 }) {
   return (
     <Card>
@@ -70,6 +134,40 @@ function ProfileList({
             <p className="font-semibold text-white">
               {profile.displayName ?? profile.email ?? "Evespace User"}
             </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {actionMode === "following" ? (
+                <form action={unfollowUserAction}>
+                  <input name="followingProfileId" type="hidden" value={profile.id} />
+                  <input name="returnPath" type="hidden" value="/dashboard/friends" />
+                  <Button type="submit" variant="secondary">
+                    Unfollow
+                  </Button>
+                </form>
+              ) : (
+                <form action={removeFollowerAction}>
+                  <input name="followerProfileId" type="hidden" value={profile.id} />
+                  <input name="returnPath" type="hidden" value="/dashboard/friends" />
+                  <Button type="submit" variant="secondary">
+                    Remove follower
+                  </Button>
+                </form>
+              )}
+              <form action={blockUserAction}>
+                <input name="blockedProfileId" type="hidden" value={profile.id} />
+                <input name="returnPath" type="hidden" value="/dashboard/friends" />
+                <Button type="submit" variant="danger">
+                  Block
+                </Button>
+              </form>
+              <form action={reportUserAction}>
+                <input name="reportedProfileId" type="hidden" value={profile.id} />
+                <input name="returnPath" type="hidden" value="/dashboard/friends" />
+                <input name="reason" type="hidden" value={`Reported from ${title}.`} />
+                <Button type="submit" variant="ghost">
+                  Report
+                </Button>
+              </form>
+            </div>
           </div>
         ))}
         {profiles.length === 0 ? (

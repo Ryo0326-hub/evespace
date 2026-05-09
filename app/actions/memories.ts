@@ -152,6 +152,77 @@ export async function moderatePostAction(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
+export type CreateMemoryCommentState = {
+  error: string | null;
+  ok: boolean;
+};
+
+export async function createMemoryCommentAction(
+  boardId: string,
+  postId: string,
+  _returnPath: string,
+  _prevState: CreateMemoryCommentState,
+  formData: FormData,
+): Promise<CreateMemoryCommentState> {
+  const profile = await ensureUserProfile();
+
+  if (!profile) {
+    return { error: "Sign in to comment.", ok: false };
+  }
+
+  const body = clean(formData.get("body"));
+
+  if (!body) {
+    return { error: "Write a comment before posting.", ok: false };
+  }
+
+  if (body.length > 500) {
+    return { error: "Comments must be 500 characters or fewer.", ok: false };
+  }
+
+  const board = await getAccessibleBoardById(boardId, profile);
+  const supabase = getSupabaseAdminClient();
+
+  if (!board || !supabase) {
+    return { error: "This board is not available for comments.", ok: false };
+  }
+
+  const { data: post, error: postError } = await supabase
+    .from("memory_posts")
+    .select("id, board_id, status")
+    .eq("id", postId)
+    .eq("board_id", board.id)
+    .eq("status", "approved")
+    .maybeSingle();
+
+  if (postError) {
+    return { error: postError.message, ok: false };
+  }
+
+  if (!post) {
+    return { error: "That memory is not available for comments.", ok: false };
+  }
+
+  const { error } = await supabase.from("memory_post_comments").insert({
+    post_id: post.id,
+    board_id: board.id,
+    profile_id: profile.id,
+    clerk_user_id: profile.clerkUserId,
+    author_display_name:
+      profile.displayName || profile.email || "Evespace Friend",
+    body,
+  });
+
+  if (error) {
+    return { error: error.message, ok: false };
+  }
+
+  revalidatePath(
+    board.boardType === "official_event" ? `/events/${board.slug}/board` : `/boards/${board.id}`,
+  );
+  return { error: null, ok: true };
+}
+
 function readStickers(formData: FormData): StickerSelection[] {
   const raw = String(formData.get("stickers") ?? "[]");
   let parsed: unknown;

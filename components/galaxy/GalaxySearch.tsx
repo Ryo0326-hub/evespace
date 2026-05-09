@@ -22,7 +22,7 @@ export function GalaxySearch({
     const normalized = query.trim().toLowerCase();
 
     if (!normalized) {
-      return events.slice(0, 4);
+      return events;
     }
 
     return events
@@ -92,36 +92,60 @@ export function GalaxySearch({
         />
       </div>
 
-      <div className="mt-2 overflow-hidden rounded-[1.25rem] border border-white/10 bg-slate-950/70 sm:mt-3 sm:rounded-3xl">
+      <div className="mt-2 max-h-[10.75rem] overflow-y-auto rounded-[1.25rem] border border-white/10 bg-slate-950/70 sm:mt-3 sm:max-h-[12rem] sm:rounded-3xl">
         {suggestions.length > 0 ? (
-          suggestions.map((event, index) => (
-            <button
-              key={event.id}
-              type="button"
-              disabled={disabled}
-              onMouseEnter={() => setActiveIndex(index)}
-              onClick={() => onSelect(event)}
-              className={`grid w-full gap-0.5 px-4 py-2.5 text-left transition sm:gap-1 sm:px-5 sm:py-4 ${
-                index === activeIndex
-                  ? "bg-cyan-200/15 text-white"
-                  : "text-slate-200 hover:bg-white/10"
-              }`}
-            >
-              <span className="font-semibold">{event.title}</span>
-              <span className="text-sm text-slate-400">
-                {compactDateLocation(event.startTime, event.locationName)}
-              </span>
-              {event.category ? (
-                <span className="w-fit rounded-full border border-purple-200/20 bg-purple-200/10 px-2.5 py-1 text-xs text-purple-100">
-                  {event.category}
+          suggestions.map((event, index) => {
+            const ownerName = event.ownerDisplayName || "Evespace organizer";
+
+            return (
+              <button
+                key={event.id}
+                type="button"
+                disabled={disabled}
+                onMouseEnter={() => setActiveIndex(index)}
+                onClick={() => onSelect(event)}
+                className={`grid min-h-[5.375rem] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-2.5 text-left transition sm:min-h-24 sm:gap-4 sm:px-5 sm:py-4 ${
+                  index === activeIndex
+                    ? "bg-cyan-200/15 text-white"
+                    : "text-slate-200 hover:bg-white/10"
+                }`}
+              >
+                <span className="grid min-w-0 gap-0.5 sm:gap-1">
+                  <span className="truncate font-semibold">{event.title}</span>
+                  <span className="truncate text-sm text-slate-400">
+                    {compactDateLocation(event.startTime, event.locationName)}
+                  </span>
+                  {event.category ? (
+                    <span className="w-fit rounded-full border border-purple-200/20 bg-purple-200/10 px-2.5 py-1 text-xs text-purple-100">
+                      {event.category}
+                    </span>
+                  ) : event.boardType === "private_memory" ? (
+                    <span className="w-fit rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2.5 py-1 text-xs text-cyan-100">
+                      Private memory board
+                    </span>
+                  ) : null}
                 </span>
-              ) : event.boardType === "private_memory" ? (
-                <span className="w-fit rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2.5 py-1 text-xs text-cyan-100">
-                  Private memory board
+
+                <span className="flex max-w-[9rem] items-center justify-end gap-2 text-right">
+                  <span className="hidden min-w-0 sm:block">
+                    <span className="block truncate text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Owner
+                    </span>
+                    <span className="block truncate text-xs font-semibold text-slate-200">
+                      {ownerName}
+                    </span>
+                  </span>
+                  <span
+                    aria-label={`Event owner ${ownerName}`}
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full border border-cyan-100/30 bg-cyan-100/15 text-xs font-bold text-cyan-50 sm:size-10"
+                    title={`Owner: ${ownerName}`}
+                  >
+                    {getInitials(ownerName)}
+                  </span>
                 </span>
-              ) : null}
-            </button>
-          ))
+              </button>
+            );
+          })
         ) : (
           <p className="px-5 py-5 text-sm text-slate-300">
             No board found in this galaxy yet.
@@ -129,5 +153,16 @@ export function GalaxySearch({
         )}
       </div>
     </div>
+  );
+}
+
+function getInitials(value: string) {
+  return (
+    value
+      .split(/[ @._-]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "EV"
   );
 }

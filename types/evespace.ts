@@ -166,6 +166,19 @@ export type MemoryPost = {
   boardY: number | null;
   rotation: number;
   status: MemoryPostStatus;
+  comments: MemoryPostComment[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MemoryPostComment = {
+  id: string;
+  postId: string;
+  boardId: string | null;
+  profileId: string | null;
+  clerkUserId: string | null;
+  authorDisplayName: string | null;
+  body: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -226,6 +239,21 @@ export type Profile = {
 export type FollowCounts = {
   followers: number;
   following: number;
+};
+
+export type FollowRelationshipStatus =
+  | "none"
+  | "requested"
+  | "following"
+  | "blocked"
+  | "blocked_by";
+
+export type FollowRequest = {
+  id: string;
+  requester: Profile;
+  requestedProfileId: string;
+  status: "pending" | "accepted" | "denied";
+  createdAt: string;
 };
 
 export type NotificationType = "followed_you" | "you_followed";

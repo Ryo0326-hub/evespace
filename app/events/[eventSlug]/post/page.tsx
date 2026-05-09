@@ -63,12 +63,12 @@ export default async function CreateMemoryPostPage({
             Post to {event.title}
           </h1>
           <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
-            Upload a photo, add a plain caption, choose optional stickers, and
-            preview your memory card before it joins the board.
+            Upload a photo, doodle on it, add a caption, and preview your memory
+            card before it joins the board.
           </p>
         </header>
 
-        <MemoryPostForm action={action} board={event} />
+        <MemoryPostForm action={action} />
       </div>
     </main>
   );

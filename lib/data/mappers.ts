@@ -4,6 +4,7 @@ import type {
   Event,
   EventSchedule,
   MemoryPost,
+  MemoryPostComment,
   PlacedSticker,
   Profile,
   StickerSelection,
@@ -156,6 +157,21 @@ export function mapMemoryPost(row: DbEvent): MemoryPost {
       row.status === "removed"
         ? row.status
         : "pending",
+    comments: [],
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+export function mapMemoryPostComment(row: DbEvent): MemoryPostComment {
+  return {
+    id: String(row.id),
+    postId: String(row.post_id),
+    boardId: (row.board_id as string | null) ?? null,
+    profileId: (row.profile_id as string | null) ?? null,
+    clerkUserId: (row.clerk_user_id as string | null) ?? null,
+    authorDisplayName: (row.author_display_name as string | null) ?? null,
+    body: String(row.body ?? ""),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };

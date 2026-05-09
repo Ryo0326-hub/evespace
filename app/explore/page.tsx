@@ -75,9 +75,9 @@ export default async function ExplorePage(props: {
                   </div>
                 </Link>
                 <FollowButton
-                  following={person.isFollowing}
                   followingProfileId={person.id}
                   returnPath="/explore"
+                  status={person.followStatus}
                 />
               </Card>
             ))}

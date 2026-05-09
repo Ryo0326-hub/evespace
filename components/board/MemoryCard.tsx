@@ -3,6 +3,7 @@
 
 import { useRef } from "react";
 import { DraggableSticker } from "@/components/board/DraggableSticker";
+import { MemoryComments } from "@/components/board/MemoryComments";
 import { StickerVisual } from "@/components/board/StickerVisual";
 import { cn, formatDate } from "@/lib/utils";
 import type { MemoryPost, PlacedSticker, StickerPlacement } from "@/types/evespace";
@@ -22,6 +23,8 @@ export function MemoryCard({
   onSelect,
   onStickerMove,
   onStickerDelete,
+  returnPath = "",
+  viewerSignedIn = false,
 }: {
   post: MemoryPost;
   stickers?: PlacedSticker[];
@@ -30,6 +33,8 @@ export function MemoryCard({
   onSelect?: (postId: string) => void;
   onStickerMove?: (stickerId: string, x: number, y: number) => void;
   onStickerDelete?: (stickerId: string) => void;
+  returnPath?: string;
+  viewerSignedIn?: boolean;
 }) {
   const stickerLayerRef = useRef<HTMLDivElement | null>(null);
 
@@ -70,9 +75,6 @@ export function MemoryCard({
             </p>
             <time className="text-xs text-slate-500">{formatDate(post.createdAt)}</time>
           </div>
-          <span className="rounded-full border border-black px-3 py-1 text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-black">
-            Memory
-          </span>
         </header>
 
         <div className="relative z-10 overflow-hidden rounded-xl border border-black bg-white">
@@ -99,6 +101,16 @@ export function MemoryCard({
             </p>
           ) : null}
         </div>
+
+        {returnPath ? (
+          <MemoryComments
+            boardId={post.boardId ?? post.eventId}
+            comments={post.comments}
+            postId={post.id}
+            returnPath={returnPath}
+            viewerSignedIn={viewerSignedIn}
+          />
+        ) : null}
       </div>
     </article>
   );

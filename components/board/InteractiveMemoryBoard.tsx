@@ -53,10 +53,12 @@ function getDropCard(clientX: number, clientY: number) {
 export function InteractiveMemoryBoard({
   boardId,
   posts,
+  returnPath,
   viewerProfileId,
 }: {
   boardId: string;
   posts: MemoryPost[];
+  returnPath: string;
   viewerProfileId: string | null;
 }) {
   const firstOwnedPostId = useMemo(() => {
@@ -397,8 +399,10 @@ export function InteractiveMemoryBoard({
               onStickerDelete={deleteSticker}
               onStickerMove={moveSticker}
               post={post}
+              returnPath={returnPath}
               selected={selectedPostId === post.id && ownsPost(post.id)}
               stickers={stickersByPost[post.id] ?? []}
+              viewerSignedIn={Boolean(viewerProfileId)}
             />
           ))
         )}

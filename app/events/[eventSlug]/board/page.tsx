@@ -77,7 +77,12 @@ export default async function MemoryBoardPage({
           </p>
         </header>
 
-        <MemoryBoard boardId={event.id} posts={posts} viewerProfileId={profile?.id ?? null} />
+        <MemoryBoard
+          boardId={event.id}
+          posts={posts}
+          returnPath={`/events/${event.slug}/board`}
+          viewerProfileId={profile?.id ?? null}
+        />
       </div>
     </main>
   );

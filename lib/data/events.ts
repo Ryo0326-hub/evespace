@@ -16,17 +16,8 @@ export async function getAllAdminEvents(): Promise<Event[]> {
   return [];
 }
 
-export async function getManagedEvents(clerkUserId: string): Promise<Event[]> {
-  return getManagedOfficialBoards({
-    id: "",
-    clerkUserId,
-    displayName: null,
-    avatarUrl: null,
-    email: null,
-    role: "user",
-    createdAt: "",
-    updatedAt: "",
-  });
+export async function getManagedEvents(profile: Profile): Promise<Event[]> {
+  return getManagedOfficialBoards(profile);
 }
 
 export async function getEventBySlug(slug: string): Promise<Event | null> {

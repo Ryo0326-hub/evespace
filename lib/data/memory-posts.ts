@@ -1,4 +1,4 @@
-import { mapMemoryPost } from "@/lib/data/mappers";
+import { mapMemoryPost, mapMemoryPostComment } from "@/lib/data/mappers";
 import { mockMemoryPosts } from "@/lib/mock-data";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -33,7 +33,8 @@ export async function getApprovedMemoryPostsByBoard(
     return [];
   }
 
-  return data.map(mapMemoryPost);
+  const posts = data.map(mapMemoryPost);
+  return attachComments(posts);
 }
 
 export async function getPendingMemoryPosts(eventId: string): Promise<MemoryPost[]> {
@@ -63,7 +64,8 @@ export async function getModerationMemoryPostsByBoard(
     return [];
   }
 
-  return data.map(mapMemoryPost);
+  const posts = data.map(mapMemoryPost);
+  return attachComments(posts);
 }
 
 export async function getMemoryPostsByClerkUser(
@@ -86,7 +88,8 @@ export async function getMemoryPostsByClerkUser(
     return [];
   }
 
-  return data.map(mapMemoryPost);
+  const posts = data.map(mapMemoryPost);
+  return attachComments(posts);
 }
 
 export async function updateMemoryPostStatus(
@@ -105,4 +108,55 @@ export async function updateMemoryPostStatus(
     .eq("id", postId);
 
   return { error: error?.message ?? null };
+}
+
+async function attachComments(posts: MemoryPost[]): Promise<MemoryPost[]> {
+  if (posts.length === 0) {
+    return posts;
+  }
+
+  const supabase = getSupabaseAdminClient() ?? getSupabaseServerClient();
+
+  if (!supabase) {
+    return posts;
+  }
+
+  const postIds = posts.map((post) => post.id);
+  const { data, error } = await supabase
+    .from("memory_post_comments")
+    .select("*")
+    .in("post_id", postIds)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    if (!isMissingCommentsTableError(error)) {
+      console.error("Failed to load memory post comments", error.message ?? error);
+    }
+    return posts;
+  }
+
+  const commentsByPost = data.reduce<Record<string, ReturnType<typeof mapMemoryPostComment>[]>>(
+    (groups, row) => {
+      const comment = mapMemoryPostComment(row);
+      groups[comment.postId] = [...(groups[comment.postId] ?? []), comment];
+      return groups;
+    },
+    {},
+  );
+
+  return posts.map((post) => ({
+    ...post,
+    comments: commentsByPost[post.id] ?? [],
+  }));
+}
+
+function isMissingCommentsTableError(error: { code?: string; message?: string }) {
+  const message = String(error.message ?? "").toLowerCase();
+
+  return (
+    error.code === "42P01" ||
+    error.code === "PGRST205" ||
+    (message.includes("memory_post_comments") &&
+      (message.includes("does not exist") || message.includes("could not find")))
+  );
 }

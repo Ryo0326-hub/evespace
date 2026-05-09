@@ -13,7 +13,7 @@ import {
   getAccessibleBoardById,
 } from "@/lib/data/boards";
 import { getApprovedMemoryPostsByBoard } from "@/lib/data/memory-posts";
-import { isFollowing } from "@/lib/data/follows";
+import { getFollowRelationshipStatus } from "@/lib/data/follows";
 import { cn, compactDateLocation } from "@/lib/utils";
 
 export default async function PrivateBoardPage({
@@ -30,13 +30,13 @@ export default async function PrivateBoardPage({
     notFound();
   }
 
-  const [posts, canManage, canPost, followingOwner] = await Promise.all([
+  const [posts, canManage, canPost, followStatus] = await Promise.all([
     getApprovedMemoryPostsByBoard(board.id),
     canManageBoard(board.id, profile),
     canPostToBoard(board, profile),
     profile && board.ownerProfileId && board.ownerProfileId !== profile.id
-      ? isFollowing(profile.id, board.ownerProfileId)
-      : Promise.resolve(false),
+      ? getFollowRelationshipStatus(profile.id, board.ownerProfileId)
+      : Promise.resolve<"none">("none"),
   ]);
 
   const background = boardBackgrounds[board.boardBackgroundTheme];
@@ -92,10 +92,10 @@ export default async function PrivateBoardPage({
               <p className="text-sm text-slate-600">
                 Shared by {board.ownerDisplayName ?? "an Evespace user"}
               </p>
-              <FollowButton
-                following={Boolean(followingOwner)}
+                <FollowButton
                 followingProfileId={board.ownerProfileId}
                 returnPath={`/boards/${board.id}`}
+                status={followStatus}
               />
             </div>
           ) : null}
@@ -114,7 +114,12 @@ export default async function PrivateBoardPage({
         </div>
 
         <Card className="overflow-visible border-black/10 bg-white/60 text-slate-950 shadow-sm">
-          <MemoryBoard boardId={board.id} posts={posts} viewerProfileId={profile?.id ?? null} />
+          <MemoryBoard
+            boardId={board.id}
+            posts={posts}
+            returnPath={`/boards/${board.id}`}
+            viewerProfileId={profile?.id ?? null}
+          />
         </Card>
       </div>
     </main>

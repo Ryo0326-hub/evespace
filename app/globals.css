@@ -77,6 +77,66 @@ select {
   justify-items: center;
 }
 
+.planet-hologram {
+  animation: planet-hologram-float 8s ease-in-out infinite;
+}
+
+.planet-scanline {
+  background:
+    linear-gradient(
+      180deg,
+      transparent,
+      rgba(103, 232, 249, 0.08),
+      transparent
+    ),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.05) 0,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 1px,
+      transparent 7px
+    );
+  animation: planet-scanline-drift 7s linear infinite;
+}
+
+.planet-signal {
+  animation: planet-signal-pulse 2.7s ease-in-out infinite;
+}
+
+@keyframes planet-hologram-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-0.7rem);
+  }
+}
+
+@keyframes planet-scanline-drift {
+  0% {
+    background-position: 0 0, 0 0;
+  }
+
+  100% {
+    background-position: 0 60px, 0 84px;
+  }
+}
+
+@keyframes planet-signal-pulse {
+  0%,
+  100% {
+    opacity: 0.78;
+    box-shadow: 0 0 16px rgba(103, 232, 249, 0.64);
+  }
+
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 30px rgba(103, 232, 249, 0.98);
+  }
+}
+
 @media (min-width: 760px) {
   .memory-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

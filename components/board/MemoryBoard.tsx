@@ -1,14 +1,15 @@
-import { EmptyState } from "@/components/ui/EmptyState";
 import { InteractiveMemoryBoard } from "@/components/board/InteractiveMemoryBoard";
 import type { MemoryPost } from "@/types/evespace";
 
 export function MemoryBoard({
   boardId,
   posts,
+  returnPath,
   viewerProfileId = null,
 }: {
   boardId: string;
   posts: MemoryPost[];
+  returnPath: string;
   viewerProfileId?: string | null;
 }) {
 
@@ -28,6 +29,7 @@ export function MemoryBoard({
       key={interactiveKey}
       boardId={boardId}
       posts={posts}
+      returnPath={returnPath}
       viewerProfileId={viewerProfileId}
     />
   );

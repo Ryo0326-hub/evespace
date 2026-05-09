@@ -47,11 +47,11 @@ export default async function CreatePrivateBoardPostPage({
             Post to {board.title}
           </h1>
           <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
-            Upload a photo, add a plain caption, choose optional stickers, and submit.
+            Upload a photo, doodle on it, add a caption, and submit.
           </p>
         </header>
 
-        <MemoryPostForm action={action} board={board} />
+        <MemoryPostForm action={action} />
       </div>
     </main>
   );
