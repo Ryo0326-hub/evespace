@@ -1,10 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  acceptFollowRequestAction,
+  denyFollowRequestAction,
+} from "@/app/actions/follows";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
 import { getNotificationsForProfile } from "@/lib/data/notifications";
+import { groupNotificationsByDay } from "@/lib/notifications/notification-utils";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatDate } from "@/lib/utils";
+import type { AppNotification } from "@/types/evespace";
 
 export default async function NotificationsPage() {
   const profile = await ensureUserProfile();
@@ -14,6 +21,7 @@ export default async function NotificationsPage() {
   }
 
   const notifications = await getNotificationsForProfile(profile);
+  const groupedNotifications = groupNotificationsByDay(notifications);
 
   return (
     <main className="cosmic-bg min-h-screen px-4 py-8 sm:px-8">
@@ -22,53 +30,107 @@ export default async function NotificationsPage() {
           <p className="text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
             Notifications
           </p>
-          <h1 className="mt-3 text-4xl font-semibold text-white">
-            Your Updates
-          </h1>
-          <p className="mt-3 text-sm leading-6 text-slate-300">
-            See when you follow someone or when someone follows you.
-          </p>
         </header>
 
         {notifications.length === 0 ? (
           <EmptyState
             title="No notifications yet."
-            description="Follow another user, or wait for someone to follow you."
+            description="Your updates will appear here as they happen."
           />
         ) : (
-          <div className="grid gap-3">
-            {notifications.map((notification) => {
-              const content = (
-                <Card className="transition hover:border-cyan-200/30 hover:bg-white/[0.08]">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-base font-semibold text-white">
-                        {notification.title}
-                      </p>
-                      {notification.body ? (
-                        <p className="mt-1 text-sm leading-6 text-slate-300">
-                          {notification.body}
-                        </p>
-                      ) : null}
-                    </div>
-                    <time className="shrink-0 text-xs text-slate-500">
-                      {formatDate(notification.createdAt)}
-                    </time>
-                  </div>
-                </Card>
-              );
-
-              return notification.href ? (
-                <Link href={notification.href} key={notification.id}>
-                  {content}
-                </Link>
-              ) : (
-                <div key={notification.id}>{content}</div>
-              );
-            })}
+          <div className="grid gap-6">
+            <NotificationSection
+              notifications={groupedNotifications.today}
+              title="Today"
+            />
+            <NotificationSection
+              notifications={groupedNotifications.earlier}
+              title="Earlier"
+            />
           </div>
         )}
       </div>
     </main>
+  );
+}
+
+function NotificationSection({
+  notifications,
+  title,
+}: {
+  notifications: AppNotification[];
+  title: string;
+}) {
+  if (notifications.length === 0) {
+    return null;
+  }
+
+  return (
+    <section className="grid gap-3">
+      <h2 className="text-lg font-semibold text-white">{title}</h2>
+      {notifications.map((notification) => (
+        <NotificationItem key={notification.id} notification={notification} />
+      ))}
+    </section>
+  );
+}
+
+function NotificationItem({ notification }: { notification: AppNotification }) {
+  const followRequestId =
+    typeof notification.metadata.followRequestId === "string"
+      ? notification.metadata.followRequestId
+      : null;
+  const canRespond =
+    notification.notificationType === "follow_requested" &&
+    notification.followRequestStatus === "pending" &&
+    Boolean(followRequestId);
+
+  const content = (
+    <Card className="transition hover:border-cyan-200/30 hover:bg-white/[0.08]">
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
+        <div className="min-w-0">
+          <p className="text-base font-semibold text-white">
+            {notification.title}
+          </p>
+          {notification.body ? (
+            <p className="mt-1 text-sm leading-6 text-slate-300">
+              {notification.body}
+            </p>
+          ) : null}
+          {notification.notificationType === "follow_requested" &&
+          notification.followRequestStatus &&
+          notification.followRequestStatus !== "pending" ? (
+            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+              {notification.followRequestStatus}
+            </p>
+          ) : null}
+        </div>
+        <time className="shrink-0 text-xs text-slate-500">
+          {formatDate(notification.createdAt)}
+        </time>
+      </div>
+      {canRespond && followRequestId ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          <form action={acceptFollowRequestAction}>
+            <input name="requestId" type="hidden" value={followRequestId} />
+            <input name="returnPath" type="hidden" value="/notifications" />
+            <Button type="submit">Accept</Button>
+          </form>
+          <form action={denyFollowRequestAction}>
+            <input name="requestId" type="hidden" value={followRequestId} />
+            <input name="returnPath" type="hidden" value="/notifications" />
+            <Button type="submit" variant="secondary">
+              Deny
+            </Button>
+          </form>
+        </div>
+      ) : null}
+    </Card>
+  );
+
+  return notification.href && !canRespond ? (
+    <Link href={notification.href}>{content}</Link>
+  ) : (
+    content
   );
 }

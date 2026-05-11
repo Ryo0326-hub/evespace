@@ -3,10 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireBoardAdmin, requirePlatformAdmin } from "@/lib/auth/permissions";
-import { createEvent, updateEvent } from "@/lib/data/events";
+import { createEvent, getManagedEvents, updateEvent } from "@/lib/data/events";
+import {
+  createBoardCreatedNotification,
+  createFriendBoardCreatedNotifications,
+  createPlanetLevelUpNotification,
+} from "@/lib/data/notifications";
 import { replaceScheduleItems, upsertScheduleItems } from "@/lib/data/schedules";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { generateStarCoordinate, slugify } from "@/lib/utils";
+import { getPlanetLevelUp } from "@/lib/planet/planet-levels";
 import type {
   BoardBackgroundTheme,
   EventInput,
@@ -17,13 +23,24 @@ import type {
 export async function createEventAction(formData: FormData) {
   const profile = await requirePlatformAdmin();
 
+  const previousEventCount = (await getManagedEvents(profile)).length;
   const input = readEventInput(formData);
   const result = await createEvent(input, profile);
 
   if (result.data) {
     await upsertScheduleItems(result.data.id, readScheduleText(formData));
+    await createBoardCreatedNotification({ board: result.data, profile });
+    await createFriendBoardCreatedNotifications({ actor: profile, board: result.data });
+
+    const levelUp = getPlanetLevelUp(previousEventCount, previousEventCount + 1);
+    if (levelUp) {
+      await createPlanetLevelUpNotification({ level: levelUp, profile });
+    }
+
     revalidatePath("/");
     revalidatePath("/dashboard");
+    revalidatePath("/profile");
+    revalidatePath("/notifications");
     revalidatePath("/admin/official-events");
     redirect(`/admin/official-events/${result.data.id}/edit`);
   }

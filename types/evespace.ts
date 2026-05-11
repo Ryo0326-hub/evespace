@@ -257,7 +257,14 @@ export type FollowRequest = {
   createdAt: string;
 };
 
-export type NotificationType = "followed_you" | "you_followed";
+export type NotificationType =
+  | "followed_you"
+  | "you_followed"
+  | "follow_requested"
+  | "memory_post_added"
+  | "board_created"
+  | "planet_level_up"
+  | "friend_board_created";
 
 export type AppNotification = {
   id: string;
@@ -270,6 +277,11 @@ export type AppNotification = {
   title: string;
   body: string | null;
   href: string | null;
+  metadata: Record<string, unknown>;
   readAt: string | null;
+  important: boolean;
+  emailSentAt: string | null;
+  emailError: string | null;
+  followRequestStatus: FollowRequest["status"] | null;
   createdAt: string;
 };

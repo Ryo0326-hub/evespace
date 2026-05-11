@@ -10,6 +10,10 @@ import {
   getBoardById,
   updateBoard,
 } from "@/lib/data/boards";
+import {
+  createBoardCreatedNotification,
+  createFriendBoardCreatedNotifications,
+} from "@/lib/data/notifications";
 import { slugify } from "@/lib/utils";
 import type { BoardBackgroundTheme, BoardInput, BoardSharingScope } from "@/types/evespace";
 
@@ -22,8 +26,11 @@ export async function createPrivateBoardAction(formData: FormData) {
   const result = await createPrivateBoard(readPrivateBoardInput(formData), profile);
 
   if (result.data) {
+    await createBoardCreatedNotification({ board: result.data, profile });
+    await createFriendBoardCreatedNotifications({ actor: profile, board: result.data });
     revalidatePath("/dashboard");
     revalidatePath("/boards");
+    revalidatePath("/notifications");
     redirect(`/boards/${result.data.id}`);
   }
 

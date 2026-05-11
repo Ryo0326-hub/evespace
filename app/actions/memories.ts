@@ -6,6 +6,7 @@ import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
 import { requireBoardAdmin } from "@/lib/auth/permissions";
 import { canPostToBoard, getAccessibleBoardById } from "@/lib/data/boards";
 import { getEventBySlug } from "@/lib/data/events";
+import { createMemoryPostAddedNotifications } from "@/lib/data/notifications";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { acceptedImageTypes, maxUploadSizeBytes } from "@/lib/constants";
 import { isRegisteredStickerId } from "@/lib/stickers/sticker-registry";
@@ -84,31 +85,42 @@ async function createBoardMemoryPost(
   } = supabase.storage.from("memory-photos").getPublicUrl(storagePath);
   const status = "approved";
 
-  const { error } = await supabase.from("memory_posts").insert({
-    board_id: board.id,
-    event_id: board.boardType === "official_event" ? board.id : null,
-    profile_id: profile.id,
-    clerk_user_id: profile.clerkUserId,
-    author_display_name:
-      clean(formData.get("authorDisplayName")) ||
-      profile.displayName ||
-      profile.email ||
-      "Anonymous",
-    image_url: publicUrl,
-    storage_path: storagePath,
-    caption: clean(formData.get("caption")),
-    stickers: readStickers(formData),
-    status,
-    frame_style: "none",
-    sticky_note_style: "default",
-    rotation: 0,
-  });
+  const { data: post, error } = await supabase
+    .from("memory_posts")
+    .insert({
+      board_id: board.id,
+      event_id: board.boardType === "official_event" ? board.id : null,
+      profile_id: profile.id,
+      clerk_user_id: profile.clerkUserId,
+      author_display_name:
+        clean(formData.get("authorDisplayName")) ||
+        profile.displayName ||
+        profile.email ||
+        "Anonymous",
+      image_url: publicUrl,
+      storage_path: storagePath,
+      caption: clean(formData.get("caption")),
+      stickers: readStickers(formData),
+      status,
+      frame_style: "none",
+      sticky_note_style: "default",
+      rotation: 0,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     throw new Error(error.message);
   }
 
+  await createMemoryPostAddedNotifications({
+    actor: profile,
+    board,
+    postId: String(post.id),
+  });
+
   revalidatePath(returnPath);
+  revalidatePath("/notifications");
   if (board.boardType === "official_event") {
     revalidatePath(`/events/${board.slug}`);
   }

@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { GalaxyCanvas } from "@/components/galaxy/GalaxyCanvas";
 import { GalaxySearch } from "@/components/galaxy/GalaxySearch";
-import { LinkButton } from "@/components/ui/Button";
 import type { Event } from "@/types/evespace";
 
 export function GalaxyLanding({
@@ -93,26 +92,6 @@ export function GalaxyLanding({
             onSelect={setSelectedEvent}
           />
 
-          {events.length === 0 ? (
-            <div className="mx-auto max-w-xl rounded-[2rem] border border-white/10 bg-slate-950/70 p-5 text-center shadow-2xl shadow-black/30 backdrop-blur">
-              <p className="text-lg font-semibold text-white">
-                The public galaxy is waiting for its first official stars.
-              </p>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                {personalized
-                  ? "Create a private board or follow friends to fill your galaxy."
-                  : "Verified organization-hosted events will appear here soon."}
-              </p>
-              <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
-                <LinkButton href="/boards/new">
-                  Create a private memory board
-                </LinkButton>
-                <LinkButton href="/dashboard" variant="secondary">
-                  Organizer dashboard
-                </LinkButton>
-              </div>
-            </div>
-          ) : null}
         </div>
       </section>
     </main>

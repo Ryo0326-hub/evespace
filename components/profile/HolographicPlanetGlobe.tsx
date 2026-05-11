@@ -89,7 +89,7 @@ export function HolographicPlanetGlobe({
     const gridMaterial = new THREE.LineBasicMaterial({
       blending: THREE.AdditiveBlending,
       color: 0x6beaff,
-      depthTest: true,
+      depthTest: false,
       depthWrite: false,
       opacity: 0.78,
       transparent: true,
@@ -164,7 +164,7 @@ export function HolographicPlanetGlobe({
       startX: 0,
       startY: 0,
       velocityX: 0,
-      velocityY: 0,
+      pending: false,
     };
 
     function resize() {
@@ -186,12 +186,22 @@ export function HolographicPlanetGlobe({
       return markerNormal.dot(cameraDirection) > 0.08;
     }
 
-    function getMarkerAt(event: PointerEvent) {
+    function setPointerFromEvent(event: PointerEvent) {
       const rect = canvasElement.getBoundingClientRect();
       pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(pointer, camera);
+      return rect;
+    }
 
+    function eventHitsGlobe(event: PointerEvent) {
+      setPointerFromEvent(event);
+      raycaster.setFromCamera(pointer, camera);
+      return raycaster.intersectObject(body, false).length > 0;
+    }
+
+    function getMarkerAt(event: PointerEvent) {
+      setPointerFromEvent(event);
+      raycaster.setFromCamera(pointer, camera);
       return raycaster
         .intersectObjects(markers, false)
         .find((hit) => markerIsFacingCamera(hit.object))?.object as
@@ -203,7 +213,11 @@ export function HolographicPlanetGlobe({
       const marker = getMarkerAt(event);
 
       if (!marker) {
-        canvasElement.style.cursor = drag.active ? "grabbing" : "grab";
+        canvasElement.style.cursor = drag.active
+          ? "grabbing"
+          : eventHitsGlobe(event)
+            ? "grab"
+            : "default";
         setTooltip(null);
         return;
       }
@@ -219,19 +233,56 @@ export function HolographicPlanetGlobe({
     }
 
     function handlePointerDown(event: PointerEvent) {
-      event.preventDefault();
-      drag.active = true;
+      const startsOnGlobe = Boolean(getMarkerAt(event)) || eventHitsGlobe(event);
+
+      if (!startsOnGlobe) {
+        drag.active = false;
+        drag.pending = false;
+        drag.velocityX = 0;
+        canvasElement.style.cursor = "default";
+        setTooltip(null);
+        return;
+      }
+
+      drag.active = event.pointerType === "mouse";
+      drag.pending = !drag.active;
       drag.lastX = event.clientX;
       drag.lastY = event.clientY;
       drag.startX = event.clientX;
       drag.startY = event.clientY;
       drag.velocityX = 0;
-      drag.velocityY = 0;
-      canvasElement.style.cursor = "grabbing";
-      canvasElement.setPointerCapture(event.pointerId);
+      canvasElement.style.cursor = drag.active ? "grabbing" : "grab";
+
+      if (drag.active) {
+        event.preventDefault();
+        canvasElement.setPointerCapture(event.pointerId);
+      }
     }
 
     function handlePointerMove(event: PointerEvent) {
+      if (drag.pending) {
+        const dx = event.clientX - drag.startX;
+        const dy = event.clientY - drag.startY;
+        const absX = Math.abs(dx);
+        const absY = Math.abs(dy);
+
+        if (absY > 8 && absY > absX) {
+          drag.pending = false;
+          drag.velocityX = 0;
+          canvasElement.style.cursor = eventHitsGlobe(event) ? "grab" : "default";
+          return;
+        }
+
+        if (absX > 4 && absX >= absY) {
+          drag.active = true;
+          drag.pending = false;
+          canvasElement.setPointerCapture(event.pointerId);
+          canvasElement.style.cursor = "grabbing";
+        } else {
+          return;
+        }
+      }
+
       if (!drag.active) {
         updateTooltip(event);
         return;
@@ -239,26 +290,25 @@ export function HolographicPlanetGlobe({
 
       event.preventDefault();
       const dx = event.clientX - drag.lastX;
-      const dy = event.clientY - drag.lastY;
       drag.lastX = event.clientX;
       drag.lastY = event.clientY;
       drag.velocityX = dx * 0.0012;
-      drag.velocityY = dy * 0.0009;
       globeGroup.rotation.y += dx * 0.008;
-      globeGroup.rotation.x = clamp(globeGroup.rotation.x + dy * 0.0055, -0.9, 0.9);
       setTooltip(null);
     }
 
     function handlePointerUp(event: PointerEvent) {
+      const wasInteractive = drag.active || drag.pending;
       const moved = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
       drag.active = false;
-      canvasElement.style.cursor = "grab";
+      drag.pending = false;
+      canvasElement.style.cursor = eventHitsGlobe(event) ? "grab" : "default";
 
       if (canvasElement.hasPointerCapture(event.pointerId)) {
         canvasElement.releasePointerCapture(event.pointerId);
       }
 
-      if (moved < 9) {
+      if (wasInteractive && moved < 9) {
         const marker = getMarkerAt(event);
         const signal = marker?.userData.signal as PlanetGlobeSignal | undefined;
 
@@ -268,8 +318,22 @@ export function HolographicPlanetGlobe({
       }
     }
 
+    function handlePointerCancel(event: PointerEvent) {
+      drag.active = false;
+      drag.pending = false;
+      drag.velocityX = 0;
+
+      if (canvasElement.hasPointerCapture(event.pointerId)) {
+        canvasElement.releasePointerCapture(event.pointerId);
+      }
+
+      canvasElement.style.cursor = "default";
+      setTooltip(null);
+    }
+
     function handlePointerLeave() {
-      if (!drag.active) {
+      if (!drag.active && !drag.pending) {
+        canvasElement.style.cursor = "default";
         setTooltip(null);
       }
     }
@@ -277,7 +341,7 @@ export function HolographicPlanetGlobe({
     canvasElement.addEventListener("pointerdown", handlePointerDown);
     canvasElement.addEventListener("pointermove", handlePointerMove);
     canvasElement.addEventListener("pointerup", handlePointerUp);
-    canvasElement.addEventListener("pointercancel", handlePointerUp);
+    canvasElement.addEventListener("pointercancel", handlePointerCancel);
     canvasElement.addEventListener("pointerleave", handlePointerLeave);
 
     const resizeObserver = new ResizeObserver(resize);
@@ -287,15 +351,9 @@ export function HolographicPlanetGlobe({
     let frame = 0;
 
     function animate() {
-      if (!prefersReducedMotion && !drag.active) {
+      if (!prefersReducedMotion && !drag.active && !drag.pending) {
         globeGroup.rotation.y += 0.0022 + drag.velocityX;
-        globeGroup.rotation.x = clamp(
-          globeGroup.rotation.x + drag.velocityY,
-          -0.9,
-          0.9,
-        );
         drag.velocityX *= 0.94;
-        drag.velocityY *= 0.9;
       }
 
       halo.material.opacity = prefersReducedMotion
@@ -313,7 +371,7 @@ export function HolographicPlanetGlobe({
       canvasElement.removeEventListener("pointerdown", handlePointerDown);
       canvasElement.removeEventListener("pointermove", handlePointerMove);
       canvasElement.removeEventListener("pointerup", handlePointerUp);
-      canvasElement.removeEventListener("pointercancel", handlePointerUp);
+      canvasElement.removeEventListener("pointercancel", handlePointerCancel);
       canvasElement.removeEventListener("pointerleave", handlePointerLeave);
       renderer.dispose();
       scene.traverse((object) => {
@@ -342,11 +400,11 @@ export function HolographicPlanetGlobe({
       />
       <canvas
         aria-label="Interactive 3D holographic planet"
-        className="absolute inset-0 h-full w-full cursor-grab touch-none"
+        className="absolute inset-0 h-full w-full cursor-default"
         ref={canvasRef}
+        style={{ touchAction: "pan-y" }}
       />
       <div className="planet-scanline pointer-events-none absolute inset-0 opacity-35 mix-blend-screen" />
-      <div className="pointer-events-none absolute inset-x-[18%] bottom-[7%] h-px bg-cyan-100/70 shadow-[0_0_30px_rgba(103,232,249,0.8)]" />
 
       {tooltip ? (
         <div
@@ -402,15 +460,15 @@ function createGlobeGrid(radius: number, material: THREE.LineBasicMaterial) {
     const longitude = THREE.MathUtils.degToRad(degrees);
     const points: THREE.Vector3[] = [];
 
-    for (let index = 0; index <= 144; index += 1) {
-      const latitude = -Math.PI / 2 + (index / 144) * Math.PI;
-      const x = Math.cos(latitude) * Math.cos(longitude) * radius;
-      const y = Math.sin(latitude) * radius;
-      const z = Math.cos(latitude) * Math.sin(longitude) * radius;
+    for (let index = 0; index < 144; index += 1) {
+      const polar = (index / 144) * Math.PI * 2;
+      const x = Math.cos(polar) * Math.cos(longitude) * radius;
+      const y = Math.sin(polar) * radius;
+      const z = Math.cos(polar) * Math.sin(longitude) * radius;
       points.push(new THREE.Vector3(x, y, z));
     }
 
-    lines.push(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material));
+    lines.push(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(points), material));
   }
 
   return lines;

@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
-import { createFollowNotifications } from "@/lib/data/notifications";
+import {
+  createFollowNotifications,
+  createFollowRequestedNotification,
+} from "@/lib/data/notifications";
 import { mapProfile } from "@/lib/data/mappers";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
@@ -62,23 +65,34 @@ export async function followUserAction(formData: FormData) {
   }
 
 
-  const { error: requestError } = await supabase.from("user_follow_requests").upsert(
-    {
-      requester_profile_id: profile.id,
-      requested_profile_id: followingProfile.id,
-      requester_clerk_user_id: profile.clerkUserId,
-      requested_clerk_user_id: followingProfile.clerk_user_id,
-      status: "pending",
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "requester_profile_id,requested_profile_id" },
-  );
+  const { data: request, error: requestError } = await supabase
+    .from("user_follow_requests")
+    .upsert(
+      {
+        requester_profile_id: profile.id,
+        requested_profile_id: followingProfile.id,
+        requester_clerk_user_id: profile.clerkUserId,
+        requested_clerk_user_id: followingProfile.clerk_user_id,
+        status: "pending",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "requester_profile_id,requested_profile_id" },
+    )
+    .select("*")
+    .single();
 
   if (requestError) {
     throw new Error(requestError.message);
   }
 
+  await createFollowRequestedNotification({
+    request,
+    requested: mapProfile(followingProfile),
+    requester: profile,
+  });
+
   revalidateFollowPaths(returnPath);
+  revalidatePath("/notifications");
 }
 
 export async function unfollowUserAction(formData: FormData) {
@@ -199,6 +213,7 @@ export async function denyFollowRequestAction(formData: FormData) {
   }
 
   revalidateFollowPaths(returnPath);
+  revalidatePath("/notifications");
 }
 
 export async function removeFollowerAction(formData: FormData) {

@@ -26,6 +26,9 @@ CLERK_SECRET_KEY=
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+RESEND_API_KEY=
+EMAIL_FROM=
+APP_BASE_URL=
 ```
 
 Without Supabase configuration, the public app falls back to mock events and memories so the visual prototype remains usable.

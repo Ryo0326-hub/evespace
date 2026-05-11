@@ -5,28 +5,9 @@ import {
   type PlanetGlobeSignal,
 } from "@/components/profile/HolographicPlanetGlobe";
 import { LinkButton } from "@/components/ui/Button";
+import { getPlanetLevelInfo } from "@/lib/planet/planet-levels";
 import { compactDateLocation } from "@/lib/utils";
 import type { Event, Profile } from "@/types/evespace";
-
-type PlanetLevel = {
-  level: 1 | 2 | 3;
-  name: string;
-};
-
-const PLANET_LEVELS: PlanetLevel[] = [
-  {
-    level: 1,
-    name: "Seed Planet",
-  },
-  {
-    level: 2,
-    name: "Living Planet",
-  },
-  {
-    level: 3,
-    name: "Constellation Planet",
-  },
-];
 
 export function UserPlanet({
   actionSlot,
@@ -41,11 +22,7 @@ export function UserPlanet({
   mode?: "self" | "public";
   profile: Profile;
 }) {
-  const planetLevel = getPlanetLevel(events.length);
-  const nextLevel = getNextLevel(events.length);
-  const progress = nextLevel
-    ? Math.min(100, Math.round((events.length / nextLevel.target) * 100))
-    : 100;
+  const planetLevel = getPlanetLevelInfo(events.length);
   const globeSignals = events.map(toGlobeSignal);
   const displayName = profile.displayName ?? "Evespace Explorer";
   const isSelf = mode === "self";
@@ -99,13 +76,15 @@ export function UserPlanet({
                     </p>
                   </div>
                   <p className="shrink-0 text-xs font-semibold text-slate-300">
-                    {nextLevel ? `${events.length}/${nextLevel.target} EXP` : "Max EXP"}
+                    {planetLevel.nextLevelTarget
+                      ? `${events.length}/${planetLevel.nextLevelTarget} EXP`
+                      : "Max EXP"}
                   </p>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-white/10">
                   <div
                     className="h-full rounded-full bg-cyan-200 shadow-[0_0_18px_rgba(103,232,249,0.7)]"
-                    style={{ width: `${progress}%` }}
+                    style={{ width: `${planetLevel.progress}%` }}
                   />
                 </div>
               </div>
@@ -155,30 +134,6 @@ function toGlobeSignal(event: Event): PlanetGlobeSignal {
     summary: eventSummary,
     title: event.title,
   };
-}
-
-function getPlanetLevel(eventCount: number) {
-  if (eventCount >= 6) {
-    return PLANET_LEVELS[2];
-  }
-
-  if (eventCount >= 2) {
-    return PLANET_LEVELS[1];
-  }
-
-  return PLANET_LEVELS[0];
-}
-
-function getNextLevel(eventCount: number) {
-  if (eventCount < 2) {
-    return { name: PLANET_LEVELS[1].name, target: 2 };
-  }
-
-  if (eventCount < 6) {
-    return { name: PLANET_LEVELS[2].name, target: 6 };
-  }
-
-  return null;
 }
 
 function getEventHref(event: Event) {

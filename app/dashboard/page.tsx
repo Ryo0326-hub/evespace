@@ -4,7 +4,6 @@ import { getFriendBoards, getOwnedPrivateBoards } from "@/lib/data/boards";
 import { getFollowCounts } from "@/lib/data/follows";
 import { DashboardBoardCard } from "@/components/boards/DashboardBoardCard";
 import { FriendsBoardsFeed } from "@/components/boards/FriendsBoardsFeed";
-import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/Button";
 
@@ -50,15 +49,10 @@ export default async function DashboardPage() {
               </LinkButton>
             </div>
             {myBoards.length === 0 ? (
-              <div className="grid gap-5">
-                <EmptyState
-                  title="You have not created any memory boards yet."
-                  description="Create a private board for a trip, event, or memory you want to keep."
-                />
-                <LinkButton className="w-fit" href="/boards/new">
-                  Create
-                </LinkButton>
-              </div>
+              <EmptyState
+                title="You have not created any memory boards yet."
+                description="Create a private board for a trip, event, or memory you want to keep."
+              />
             ) : (
               <div className="grid gap-4">
                 {myBoards.map((board) => (
@@ -79,14 +73,6 @@ export default async function DashboardPage() {
             </div>
             <FriendsBoardsFeed boards={friendBoards} />
           </section>
-
-          <Card>
-            <h2 className="text-xl font-semibold text-white">Following / Followers</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-300">
-              You are following {followCounts.following} people and have{" "}
-              {followCounts.followers} followers.
-            </p>
-          </Card>
         </div>
       </div>
     </main>

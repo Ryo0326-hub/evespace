@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requirePlatformAdmin } from "@/lib/auth/permissions";
+import { getBoardById } from "@/lib/data/boards";
+import { createFriendBoardCreatedNotifications } from "@/lib/data/notifications";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function verifyEventAction(eventId: string) {
@@ -26,9 +28,15 @@ export async function verifyEventAction(eventId: string) {
     throw new Error(error.message);
   }
 
+  const board = await getBoardById(eventId);
+  if (board) {
+    await createFriendBoardCreatedNotifications({ board });
+  }
+
   revalidatePath("/");
   revalidatePath("/admin/official-events");
   revalidatePath("/admin/verification");
+  revalidatePath("/notifications");
 }
 
 export async function rejectEventVerificationAction(eventId: string, notes: string) {
