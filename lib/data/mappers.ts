@@ -167,6 +167,7 @@ export function mapMemoryPostComment(row: DbEvent): MemoryPostComment {
   return {
     id: String(row.id),
     postId: String(row.post_id),
+    parentCommentId: (row.parent_comment_id as string | null) ?? null,
     boardId: (row.board_id as string | null) ?? null,
     profileId: (row.profile_id as string | null) ?? null,
     clerkUserId: (row.clerk_user_id as string | null) ?? null,

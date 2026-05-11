@@ -16,15 +16,16 @@ export function BoardForm({
       <form action={action} className="grid gap-5">
         {board ? <input name="boardId" type="hidden" value={board.id} /> : null}
         <input name="slug" type="hidden" value={board?.slug ?? ""} />
-        <Field label="Board title">
+        <Field label="Board title *">
           <Input name="title" required defaultValue={board?.title ?? ""} />
         </Field>
 
-        <Field label="Description">
+        <Field label="short description">
           <Textarea
             name="description"
+            rows={2}
             defaultValue={board?.description ?? ""}
-            placeholder="What memory does this board hold?"
+            placeholder="Optional"
           />
         </Field>
 
@@ -43,7 +44,7 @@ export function BoardForm({
               defaultValue={toDateTimeLocal(board?.endTime)}
             />
           </Field>
-          <Field label="Location name">
+          <Field label="location">
             <Input
               name="locationName"
               defaultValue={board?.locationName ?? ""}
@@ -54,14 +55,15 @@ export function BoardForm({
 
         <Field label="Sharing scope">
           <Select name="sharingScope" defaultValue={board?.sharingScope ?? "owner_only"}>
-            <option value="owner_only">Owner only</option>
-            <option value="followers">Followers</option>
+            <option value="owner_only">owner only (only visible to yourself)</option>
+            <option value="followers">followers only (accessible to your followers)</option>
+            <option value="public">public (accessible to the public)</option>
           </Select>
         </Field>
 
         <BoardBackgroundPicker defaultValue={board?.boardBackgroundTheme ?? "soft_cream"} />
 
-        <Button type="submit">{board ? "Save Board" : "Create Memory Board"}</Button>
+        <Button type="submit">{board ? "Save" : "Create"}</Button>
       </form>
     </Card>
   );

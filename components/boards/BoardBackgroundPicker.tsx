@@ -10,13 +10,13 @@ export function BoardBackgroundPicker({
   return (
     <div className="grid gap-3">
       <p className="text-sm font-medium text-slate-200">Board background</p>
-      <div className="grid gap-2 sm:grid-cols-5">
-        {boardThemes.map((theme) => {
+      <div className="grid gap-2 sm:grid-cols-3">
+        {boardThemes.slice(0, 3).map((theme) => {
           const background = boardBackgrounds[theme];
 
           return (
             <label
-              className="cursor-pointer rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-sm text-slate-200 transition hover:bg-white/10"
+              className="group cursor-pointer rounded-2xl border border-white/10 bg-white/[0.06] p-3 text-sm text-slate-200 transition hover:bg-white/10 has-[:checked]:border-cyan-400 has-[:checked]:bg-cyan-400/10 has-[:checked]:ring-1 has-[:checked]:ring-cyan-400"
               key={theme}
             >
               <input

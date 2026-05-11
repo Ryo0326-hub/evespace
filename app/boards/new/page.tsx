@@ -24,15 +24,9 @@ export default async function NewBoardPage({
           Back to Dashboard
         </LinkButton>
         <header className="my-8">
-          <p className="text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
-            Private Memory Board
-          </p>
-          <h1 className="mt-3 text-4xl font-semibold text-white">
-            Create a private board
+          <h1 className="text-4xl font-semibold text-white">
+            create
           </h1>
-          <p className="mt-3 text-sm leading-6 text-slate-300">
-            Keep a personal trip, gathering, or moment in one simple photo board.
-          </p>
         </header>
         {error ? (
           <Card className="mb-6 border-amber-200/30 bg-amber-300/10">

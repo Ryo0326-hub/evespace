@@ -206,6 +206,32 @@ export async function getFollowerProfiles(profileId: string): Promise<Profile[]>
     .map((profile) => mapProfile(profile as unknown as Record<string, unknown>));
 }
 
+export async function getBlockedProfiles(profileId: string): Promise<Profile[]> {
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("user_blocks")
+    .select("profiles:blocked_profile_id(*)")
+    .eq("blocker_profile_id", profileId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    logFollowDataError("Failed to load blocked profiles", error);
+    return [];
+  }
+
+  return data
+    .flatMap((row) => {
+      const profiles = row.profiles;
+      return Array.isArray(profiles) ? profiles : profiles ? [profiles] : [];
+    })
+    .map((profile) => mapProfile(profile as unknown as Record<string, unknown>));
+}
+
 let hasWarnedAboutMissingFollowSchema = false;
 
 function logFollowDataError(message: string, error: unknown) {

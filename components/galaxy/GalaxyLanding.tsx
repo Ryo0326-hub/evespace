@@ -78,11 +78,11 @@ export function GalaxyLanding({
               selectedEvent ? "translate-y-3 opacity-0" : "opacity-100"
             }`}
           >
-            <p className="text-xs font-medium uppercase tracking-[0.32em] text-cyan-100/80 sm:text-sm sm:tracking-[0.45em]">
-              Leave a memory
+            <p className="text-xs font-medium tracking-[0.32em] text-cyan-100/80 sm:text-sm sm:tracking-[0.45em]">
+              SHARE A MOMENT
             </p>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-white sm:mt-4 sm:text-6xl">
-              Find your event.
+              Find your event
             </h1>
           </div>
 
@@ -104,7 +104,7 @@ export function GalaxyLanding({
                   : "Verified organization-hosted events will appear here soon."}
               </p>
               <div className="mt-5 flex flex-col justify-center gap-3 sm:flex-row">
-                <LinkButton className="text-black" href="/boards/new">
+                <LinkButton href="/boards/new">
                   Create a private memory board
                 </LinkButton>
                 <LinkButton href="/dashboard" variant="secondary">

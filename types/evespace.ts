@@ -174,6 +174,7 @@ export type MemoryPost = {
 export type MemoryPostComment = {
   id: string;
   postId: string;
+  parentCommentId: string | null;
   boardId: string | null;
   profileId: string | null;
   clerkUserId: string | null;

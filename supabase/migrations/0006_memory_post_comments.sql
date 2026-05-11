@@ -3,6 +3,7 @@ create extension if not exists "pgcrypto";
 create table if not exists public.memory_post_comments (
   id uuid primary key default gen_random_uuid(),
   post_id uuid not null references public.memory_posts(id) on delete cascade,
+  parent_comment_id uuid references public.memory_post_comments(id) on delete cascade,
   board_id uuid references public.boards(id) on delete cascade,
   profile_id uuid references public.profiles(id) on delete set null,
   clerk_user_id text,
@@ -14,6 +15,8 @@ create table if not exists public.memory_post_comments (
 
 create index if not exists idx_memory_post_comments_post_created
   on public.memory_post_comments(post_id, created_at);
+create index if not exists idx_memory_post_comments_parent_created
+  on public.memory_post_comments(parent_comment_id, created_at);
 create index if not exists idx_memory_post_comments_board_created
   on public.memory_post_comments(board_id, created_at desc);
 create index if not exists idx_memory_post_comments_profile_created

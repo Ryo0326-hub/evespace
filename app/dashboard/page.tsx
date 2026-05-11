@@ -36,8 +36,8 @@ export default async function DashboardPage() {
               {followCounts.following} following · {followCounts.followers} followers
             </p>
           </div>
-          <LinkButton className="text-black" href="/boards/new">
-            Create Private Board
+          <LinkButton href="/boards/new">
+            Create
           </LinkButton>
         </header>
 
@@ -55,8 +55,8 @@ export default async function DashboardPage() {
                   title="You have not created any memory boards yet."
                   description="Create a private board for a trip, event, or memory you want to keep."
                 />
-                <LinkButton className="w-fit text-black" href="/boards/new">
-                  Create Private Board
+                <LinkButton className="w-fit" href="/boards/new">
+                  Create
                 </LinkButton>
               </div>
             ) : (

@@ -25,7 +25,10 @@ function MemoryPostSubmitButton({
   return (
     <Button
       className={cn(
-        "w-full sm:w-auto",
+        "w-full border-cyan-100/60 bg-cyan-100 text-slate-950 shadow-[0_0_24px_rgba(103,232,249,0.28)] hover:border-white/80 hover:bg-white hover:text-slate-950 sm:w-auto",
+        !fileSelected &&
+          !busy &&
+          "border-cyan-100/20 bg-cyan-100/[0.08] text-cyan-50 shadow-none hover:border-cyan-100/20 hover:bg-cyan-100/[0.08] hover:text-cyan-50 disabled:opacity-100",
         busy &&
           "cursor-wait border-slate-500 bg-slate-500 text-white hover:border-slate-500 hover:bg-slate-500",
       )}

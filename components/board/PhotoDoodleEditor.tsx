@@ -11,6 +11,7 @@ import {
 import {
   getBoundedImageSize,
   makeDoodleFileName,
+  shouldAppendStrokePoint,
 } from "@/lib/doodles/photo-doodle-utils.mjs";
 import { cn, formatDate } from "@/lib/utils";
 
@@ -86,23 +87,61 @@ function drawStroke(ctx: CanvasRenderingContext2D, stroke: Stroke) {
     return;
   }
 
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = stroke.color;
-  ctx.lineWidth = stroke.size;
+  configureStrokeContext(ctx, stroke);
 
-  const [firstPoint, ...rest] = stroke.points;
+  if (stroke.points.length === 1) {
+    drawStrokeDot(ctx, stroke.points[0], stroke.size);
+    return;
+  }
+
+  const [firstPoint] = stroke.points;
   ctx.beginPath();
   ctx.moveTo(firstPoint.x, firstPoint.y);
 
-  if (rest.length === 0) {
-    ctx.lineTo(firstPoint.x + 0.1, firstPoint.y + 0.1);
-  } else {
-    for (const point of rest) {
-      ctx.lineTo(point.x, point.y);
-    }
+  for (let index = 1; index < stroke.points.length - 1; index += 1) {
+    const point = stroke.points[index];
+    const nextPoint = stroke.points[index + 1];
+    const midPoint = {
+      x: (point.x + nextPoint.x) / 2,
+      y: (point.y + nextPoint.y) / 2,
+    };
+
+    ctx.quadraticCurveTo(point.x, point.y, midPoint.x, midPoint.y);
   }
 
+  const lastPoint = stroke.points[stroke.points.length - 1];
+  ctx.lineTo(lastPoint.x, lastPoint.y);
+  ctx.stroke();
+}
+
+function configureStrokeContext(ctx: CanvasRenderingContext2D, stroke: Stroke) {
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = stroke.color;
+  ctx.fillStyle = stroke.color;
+  ctx.lineWidth = stroke.size;
+}
+
+function drawStrokeDot(
+  ctx: CanvasRenderingContext2D,
+  point: Point,
+  brushSize: number,
+) {
+  ctx.beginPath();
+  ctx.arc(point.x, point.y, Math.max(1, brushSize / 2), 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawStrokeSegment(
+  ctx: CanvasRenderingContext2D,
+  stroke: Stroke,
+  fromPoint: Point,
+  toPoint: Point,
+) {
+  configureStrokeContext(ctx, stroke);
+  ctx.beginPath();
+  ctx.moveTo(fromPoint.x, fromPoint.y);
+  ctx.lineTo(toPoint.x, toPoint.y);
   ctx.stroke();
 }
 
@@ -131,6 +170,7 @@ export const PhotoDoodleEditor = forwardRef<
   const imageRef = useRef<HTMLImageElement | null>(null);
   const strokesRef = useRef<Stroke[]>([]);
   const activeStrokeIdRef = useRef<string | null>(null);
+  const activeStrokeRef = useRef<Stroke | null>(null);
   const [canvasSize, setCanvasSize] = useState<CanvasSize | null>(null);
   const [strokes, setStrokes] = useState<Stroke[]>([]);
   const [brushColor, setBrushColor] = useState(brushColors[0].value);
@@ -174,6 +214,8 @@ export const PhotoDoodleEditor = forwardRef<
     setImageReady(false);
     setCanvasSize(null);
     strokesRef.current = [];
+    activeStrokeRef.current = null;
+    activeStrokeIdRef.current = null;
     setStrokes([]);
     onDoodleStateChange(false);
 
@@ -232,13 +274,29 @@ export const PhotoDoodleEditor = forwardRef<
     [file],
   );
 
-  function getCanvasPoint(event: React.PointerEvent<HTMLCanvasElement>): Point {
-    const canvas = event.currentTarget;
+  function getCanvasPoint(
+    canvas: HTMLCanvasElement,
+    clientX: number,
+    clientY: number,
+  ): Point {
     const rect = canvas.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * canvas.width;
-    const y = ((event.clientY - rect.top) / rect.height) * canvas.height;
+    const x = ((clientX - rect.left) / rect.width) * canvas.width;
+    const y = ((clientY - rect.top) / rect.height) * canvas.height;
 
     return { x, y };
+  }
+
+  function getPointerPoints(event: React.PointerEvent<HTMLCanvasElement>) {
+    const canvas = event.currentTarget;
+    const nativeEvent = event.nativeEvent;
+    const sourceEvents =
+      typeof nativeEvent.getCoalescedEvents === "function"
+        ? nativeEvent.getCoalescedEvents()
+        : [nativeEvent];
+
+    return sourceEvents.map((sourceEvent) =>
+      getCanvasPoint(canvas, sourceEvent.clientX, sourceEvent.clientY),
+    );
   }
 
   function handlePointerDown(event: React.PointerEvent<HTMLCanvasElement>) {
@@ -248,35 +306,58 @@ export const PhotoDoodleEditor = forwardRef<
 
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
+    const point = getCanvasPoint(
+      event.currentTarget,
+      event.clientX,
+      event.clientY,
+    );
 
     const stroke: Stroke = {
       id: createStrokeId(),
       color: brushColor,
       size: brushSize,
-      points: [getCanvasPoint(event)],
+      points: [point],
     };
 
     activeStrokeIdRef.current = stroke.id;
-    commitStrokes([...strokesRef.current, stroke]);
+    activeStrokeRef.current = stroke;
+    strokesRef.current = [...strokesRef.current, stroke];
+    setStrokes(strokesRef.current);
+    onDoodleStateChange(true);
+
+    const context = canvasRef.current?.getContext("2d");
+
+    if (context) {
+      configureStrokeContext(context, stroke);
+      drawStrokeDot(context, point, stroke.size);
+    }
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLCanvasElement>) {
     const activeStrokeId = activeStrokeIdRef.current;
+    const activeStroke = activeStrokeRef.current;
 
-    if (!activeStrokeId || !imageReady) {
+    if (!activeStrokeId || !activeStroke || !imageReady) {
       return;
     }
 
     event.preventDefault();
 
-    const point = getCanvasPoint(event);
-    const nextStrokes = strokesRef.current.map((stroke) =>
-      stroke.id === activeStrokeId
-        ? { ...stroke, points: [...stroke.points, point] }
-        : stroke,
-    );
+    const context = canvasRef.current?.getContext("2d");
 
-    commitStrokes(nextStrokes);
+    if (!context) {
+      return;
+    }
+
+    for (const point of getPointerPoints(event)) {
+      if (!shouldAppendStrokePoint(activeStroke.points, point)) {
+        continue;
+      }
+
+      const previousPoint = activeStroke.points[activeStroke.points.length - 1];
+      activeStroke.points.push(point);
+      drawStrokeSegment(context, activeStroke, previousPoint, point);
+    }
   }
 
   function handlePointerEnd(event: React.PointerEvent<HTMLCanvasElement>) {
@@ -287,7 +368,11 @@ export const PhotoDoodleEditor = forwardRef<
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
     }
+
+    drawCanvas(strokesRef.current);
+    setStrokes([...strokesRef.current]);
     activeStrokeIdRef.current = null;
+    activeStrokeRef.current = null;
   }
 
   function undoStroke() {
@@ -315,7 +400,7 @@ export const PhotoDoodleEditor = forwardRef<
             <canvas
               aria-label="Doodle drawing surface"
               className={cn(
-                "block aspect-[4/3] h-auto w-full touch-none select-none object-cover",
+                "block aspect-[4/3] h-auto w-full touch-none select-none object-cover overscroll-contain [-webkit-touch-callout:none]",
                 imageReady ? "cursor-crosshair" : "cursor-wait opacity-70",
               )}
               height={canvasSize?.height ?? 1}
@@ -323,7 +408,9 @@ export const PhotoDoodleEditor = forwardRef<
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerEnd}
+              onContextMenu={(event) => event.preventDefault()}
               ref={canvasRef}
+              style={{ touchAction: "none" }}
               width={canvasSize?.width ?? 1}
             />
           ) : (

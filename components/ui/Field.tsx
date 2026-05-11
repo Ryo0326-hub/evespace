@@ -24,7 +24,7 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
   return (
     <input
       className={cn(
-        "min-h-11 rounded-2xl border border-white/10 bg-white/[0.07] px-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-200/60 focus:ring-2 focus:ring-cyan-200/20",
+        "w-full min-w-0 min-h-11 rounded-2xl border border-white/10 bg-white/[0.07] px-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-200/60 focus:ring-2 focus:ring-cyan-200/20",
         className,
       )}
       ref={ref}
@@ -41,7 +41,7 @@ export function Textarea({
   return (
     <textarea
       className={cn(
-        "min-h-28 rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-200/60 focus:ring-2 focus:ring-cyan-200/20",
+        "w-full min-w-0 min-h-28 rounded-2xl border border-white/10 bg-white/[0.07] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-cyan-200/60 focus:ring-2 focus:ring-cyan-200/20",
         className,
       )}
       {...props}
@@ -57,7 +57,7 @@ export function Select({
   return (
     <select
       className={cn(
-        "min-h-11 rounded-2xl border border-white/10 bg-slate-900 px-4 text-sm text-white outline-none transition focus:border-cyan-200/60 focus:ring-2 focus:ring-cyan-200/20",
+        "w-full min-w-0 min-h-11 rounded-2xl border border-white/10 bg-slate-900 px-4 text-sm text-white outline-none transition focus:border-cyan-200/60 focus:ring-2 focus:ring-cyan-200/20",
         className,
       )}
       {...props}

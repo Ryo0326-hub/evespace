@@ -10,6 +10,9 @@ import { getEventBySlug } from "@/lib/data/events";
 import { getApprovedMemoryPosts } from "@/lib/data/memory-posts";
 import { cn } from "@/lib/utils";
 
+const postMemoryActionClassName =
+  "inline-flex min-h-11 w-full items-center justify-center rounded-full border border-cyan-300/70 !bg-slate-950 px-5 py-2.5 text-sm font-semibold !text-cyan-50 shadow-[0_0_24px_rgba(8,145,178,0.28)] transition hover:border-cyan-100 hover:!bg-slate-900 hover:!text-white sm:w-auto";
+
 export default async function MemoryBoardPage({
   params,
 }: {
@@ -49,13 +52,16 @@ export default async function MemoryBoardPage({
             </LinkButton>
             <div className="flex flex-wrap gap-2" id="memory-board-actions">
               <Show when="signed-in">
-                <LinkButton className="w-full sm:w-auto" href={`/events/${event.slug}/post`}>
+                <LinkButton
+                  className={postMemoryActionClassName}
+                  href={`/events/${event.slug}/post`}
+                >
                   Post Memory
                 </LinkButton>
               </Show>
               <Show when="signed-out">
                 <SignInButton mode="modal">
-                  <button className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-cyan-200/40 bg-cyan-200 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-950/30 transition hover:bg-cyan-100 sm:w-auto">
+                  <button className={postMemoryActionClassName} type="button">
                     Post Memory
                   </button>
                 </SignInButton>

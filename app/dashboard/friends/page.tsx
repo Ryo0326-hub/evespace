@@ -5,6 +5,7 @@ import {
   denyFollowRequestAction,
   removeFollowerAction,
   reportUserAction,
+  unblockUserAction,
   unfollowUserAction,
 } from "@/app/actions/follows";
 import { FriendsBoardsFeed } from "@/components/boards/FriendsBoardsFeed";
@@ -16,6 +17,7 @@ import {
   getFollowerProfiles,
   getIncomingFollowRequests,
   getFollowingProfiles,
+  getBlockedProfiles,
 } from "@/lib/data/follows";
 import type { FollowRequest, Profile } from "@/types/evespace";
 
@@ -26,11 +28,12 @@ export default async function DashboardFriendsPage() {
     redirect("/login");
   }
 
-  const [friendBoards, following, followers, followRequests] = await Promise.all([
+  const [friendBoards, following, followers, followRequests, blockedProfiles] = await Promise.all([
     getFriendBoards(profile),
     getFollowingProfiles(profile.id),
     getFollowerProfiles(profile.id),
     getIncomingFollowRequests(profile.id),
+    getBlockedProfiles(profile.id),
   ]);
 
   return (
@@ -59,6 +62,8 @@ export default async function DashboardFriendsPage() {
           <ProfileList actionMode="following" title="Following" profiles={following} />
           <ProfileList actionMode="followers" title="Followers" profiles={followers} />
         </div>
+
+        <ProfileList actionMode="blocked" title="Blocked Users" profiles={blockedProfiles} />
       </div>
     </main>
   );
@@ -118,7 +123,7 @@ function ProfileList({
   title,
   profiles,
 }: {
-  actionMode: "following" | "followers";
+  actionMode: "following" | "followers" | "blocked";
   title: string;
   profiles: Profile[];
 }) {
@@ -135,30 +140,42 @@ function ProfileList({
               {profile.displayName ?? profile.email ?? "Evespace User"}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {actionMode === "following" ? (
-                <form action={unfollowUserAction}>
-                  <input name="followingProfileId" type="hidden" value={profile.id} />
+              {actionMode === "blocked" ? (
+                <form action={unblockUserAction}>
+                  <input name="blockedProfileId" type="hidden" value={profile.id} />
                   <input name="returnPath" type="hidden" value="/dashboard/friends" />
                   <Button type="submit" variant="secondary">
-                    Unfollow
+                    Unblock
                   </Button>
                 </form>
               ) : (
-                <form action={removeFollowerAction}>
-                  <input name="followerProfileId" type="hidden" value={profile.id} />
-                  <input name="returnPath" type="hidden" value="/dashboard/friends" />
-                  <Button type="submit" variant="secondary">
-                    Remove follower
-                  </Button>
-                </form>
+                <>
+                  {actionMode === "following" ? (
+                    <form action={unfollowUserAction}>
+                      <input name="followingProfileId" type="hidden" value={profile.id} />
+                      <input name="returnPath" type="hidden" value="/dashboard/friends" />
+                      <Button type="submit" variant="secondary">
+                        Unfollow
+                      </Button>
+                    </form>
+                  ) : (
+                    <form action={removeFollowerAction}>
+                      <input name="followerProfileId" type="hidden" value={profile.id} />
+                      <input name="returnPath" type="hidden" value="/dashboard/friends" />
+                      <Button type="submit" variant="secondary">
+                        Remove follower
+                      </Button>
+                    </form>
+                  )}
+                  <form action={blockUserAction}>
+                    <input name="blockedProfileId" type="hidden" value={profile.id} />
+                    <input name="returnPath" type="hidden" value="/dashboard/friends" />
+                    <Button type="submit" variant="danger">
+                      Block
+                    </Button>
+                  </form>
+                </>
               )}
-              <form action={blockUserAction}>
-                <input name="blockedProfileId" type="hidden" value={profile.id} />
-                <input name="returnPath" type="hidden" value="/dashboard/friends" />
-                <Button type="submit" variant="danger">
-                  Block
-                </Button>
-              </form>
               <form action={reportUserAction}>
                 <input name="reportedProfileId" type="hidden" value={profile.id} />
                 <input name="returnPath" type="hidden" value="/dashboard/friends" />

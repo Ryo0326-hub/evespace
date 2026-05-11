@@ -16,6 +16,9 @@ import { getApprovedMemoryPostsByBoard } from "@/lib/data/memory-posts";
 import { getFollowRelationshipStatus } from "@/lib/data/follows";
 import { cn, compactDateLocation } from "@/lib/utils";
 
+const postMemoryActionClassName =
+  "w-full border-cyan-300/70 !bg-slate-950 !text-cyan-50 shadow-[0_0_24px_rgba(8,145,178,0.28)] hover:border-cyan-100 hover:!bg-slate-900 hover:!text-white sm:w-auto";
+
 export default async function PrivateBoardPage({
   params,
 }: {
@@ -50,11 +53,14 @@ export default async function PrivateBoardPage({
           </LinkButton>
           <div className="flex flex-wrap gap-2">
             {canPost ? (
-              <LinkButton className="w-full sm:w-auto" href={`/boards/${board.id}/post`}>
+              <LinkButton
+                className={postMemoryActionClassName}
+                href={`/boards/${board.id}/post`}
+              >
                 Post Memory
               </LinkButton>
             ) : !profile ? (
-              <LinkButton className="w-full sm:w-auto" href="/login">
+              <LinkButton className={postMemoryActionClassName} href="/login">
                 Sign in to Post
               </LinkButton>
             ) : null}

@@ -61,18 +61,6 @@ export async function followUserAction(formData: FormData) {
     return;
   }
 
-  const { count, error: countError } = await supabase
-    .from("user_follows")
-    .select("*", { count: "exact", head: true })
-    .eq("follower_profile_id", profile.id);
-
-  if (countError) {
-    throw new Error(countError.message);
-  }
-
-  if (count !== null && count >= 10) {
-    throw new Error("You can only follow up to 10 friends.");
-  }
 
   const { error: requestError } = await supabase.from("user_follow_requests").upsert(
     {
@@ -340,6 +328,29 @@ export async function reportUserAction(formData: FormData) {
   if (reportError) {
     throw new Error(reportError.message);
   }
+
+  revalidateFollowPaths(returnPath);
+}
+
+export async function unblockUserAction(formData: FormData) {
+  const profile = await ensureUserProfile();
+  const blockedProfileId = String(formData.get("blockedProfileId") ?? "");
+  const returnPath = String(formData.get("returnPath") ?? "/dashboard/friends");
+
+  if (!profile || !blockedProfileId) {
+    return;
+  }
+
+  const supabase = getSupabaseAdminClient();
+  if (!supabase) {
+    throw new Error("Supabase service role is not configured.");
+  }
+
+  await supabase
+    .from("user_blocks")
+    .delete()
+    .eq("blocker_profile_id", profile.id)
+    .eq("blocked_profile_id", blockedProfileId);
 
   revalidateFollowPaths(returnPath);
 }

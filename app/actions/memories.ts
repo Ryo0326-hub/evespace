@@ -171,6 +171,7 @@ export async function createMemoryCommentAction(
   }
 
   const body = clean(formData.get("body"));
+  const parentCommentId = clean(formData.get("parentCommentId"));
 
   if (!body) {
     return { error: "Write a comment before posting.", ok: false };
@@ -203,15 +204,43 @@ export async function createMemoryCommentAction(
     return { error: "That memory is not available for comments.", ok: false };
   }
 
-  const { error } = await supabase.from("memory_post_comments").insert({
+  let replyParentId: string | null = null;
+
+  if (parentCommentId) {
+    const { data: parentComment, error: parentError } = await supabase
+      .from("memory_post_comments")
+      .select("id, parent_comment_id")
+      .eq("id", parentCommentId)
+      .eq("post_id", post.id)
+      .maybeSingle();
+
+    if (parentError) {
+      return { error: parentError.message, ok: false };
+    }
+
+    if (!parentComment) {
+      return { error: "That comment is not available for replies.", ok: false };
+    }
+
+    if (parentComment.parent_comment_id) {
+      return { error: "Reply to the original comment thread.", ok: false };
+    }
+
+    replyParentId = String(parentComment.id);
+  }
+
+  const commentPayload = {
     post_id: post.id,
     board_id: board.id,
+    ...(replyParentId ? { parent_comment_id: replyParentId } : {}),
     profile_id: profile.id,
     clerk_user_id: profile.clerkUserId,
     author_display_name:
       profile.displayName || profile.email || "Evespace Friend",
     body,
-  });
+  };
+
+  const { error } = await supabase.from("memory_post_comments").insert(commentPayload);
 
   if (error) {
     return { error: error.message, ok: false };
