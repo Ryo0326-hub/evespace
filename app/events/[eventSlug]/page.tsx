@@ -18,7 +18,7 @@ export default async function EventPage({
 
   const [schedules, memoryPosts] = await Promise.all([
     getEventSchedules(event.id),
-    getApprovedMemoryPosts(event.id),
+    getApprovedMemoryPosts(event.id, { limit: 3 }),
   ]);
 
   return (

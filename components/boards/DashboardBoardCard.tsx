@@ -1,6 +1,7 @@
 import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DeleteBoardButton } from "@/components/boards/DeleteBoardButton";
+import { boardAccessLabel } from "@/lib/boards/labels";
 import { boardBackgrounds } from "@/lib/constants";
 import { cn, compactDateLocation } from "@/lib/utils";
 import type { Board } from "@/types/evespace";
@@ -13,8 +14,6 @@ export function DashboardBoardCard({
   canDelete?: boolean;
 }) {
   const background = boardBackgrounds[board.boardBackgroundTheme];
-  const typeLabel =
-    board.boardType === "official_event" ? "Official Event" : "Private Memory Board";
   const href =
     board.boardType === "official_event" ? `/events/${board.slug}` : `/boards/${board.id}`;
 
@@ -30,7 +29,7 @@ export function DashboardBoardCard({
         <div>
           <p className="text-xl font-semibold text-white">{board.title}</p>
           <p className="mt-1 text-sm text-slate-400">
-            {typeLabel} · {sharingLabel(board.sharingScope)}
+            {boardAccessLabel(board)}
           </p>
           <p className="mt-2 text-sm text-slate-400">
             {compactDateLocation(board.startTime, board.locationName)}
@@ -55,20 +54,4 @@ export function DashboardBoardCard({
       </div>
     </Card>
   );
-}
-
-function sharingLabel(value: Board["sharingScope"]) {
-  if (value === "followers") {
-    return "Shared with followers";
-  }
-
-  if (value === "public") {
-    return "Public link";
-  }
-
-  if (value === "selected_users") {
-    return "Selected users";
-  }
-
-  return "Owner only";
 }

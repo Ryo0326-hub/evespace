@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { sharingScopeLabel } from "@/lib/boards/labels";
 import { compactDateLocation } from "@/lib/utils";
 import type { Event } from "@/types/evespace";
 
@@ -115,13 +116,24 @@ export function GalaxySearch({
                   <span className="truncate text-sm text-slate-400">
                     {compactDateLocation(event.startTime, event.locationName)}
                   </span>
-                  {event.category ? (
+                  {event.boardType === "official_event" ? (
+                    <span className="flex flex-wrap gap-1.5">
+                      <span className="w-fit rounded-full border border-cyan-200/25 bg-cyan-200/10 px-2.5 py-1 text-xs text-cyan-100">
+                        Official Event
+                      </span>
+                      {event.isVerified ? (
+                        <span className="w-fit rounded-full border border-emerald-200/30 bg-emerald-300/15 px-2.5 py-1 text-xs font-semibold text-emerald-100">
+                          Verified
+                        </span>
+                      ) : null}
+                    </span>
+                  ) : event.category ? (
                     <span className="w-fit rounded-full border border-purple-200/20 bg-purple-200/10 px-2.5 py-1 text-xs text-purple-100">
                       {event.category}
                     </span>
                   ) : event.boardType === "private_memory" ? (
                     <span className="w-fit rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2.5 py-1 text-xs text-cyan-100">
-                      Private memory board
+                      {sharingScopeLabel(event.sharingScope)}
                     </span>
                   ) : null}
                 </span>

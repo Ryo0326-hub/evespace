@@ -35,9 +35,18 @@ export default async function DashboardPage() {
               {followCounts.following} following · {followCounts.followers} followers
             </p>
           </div>
-          <LinkButton href="/boards/new">
-            Create
-          </LinkButton>
+          <div className="grid w-full gap-2 sm:w-64">
+            <LinkButton className="w-full" href="/boards/new">
+              Create
+            </LinkButton>
+            <LinkButton
+              className="w-full border-cyan-200/35 bg-cyan-100/10 text-cyan-50 shadow-[0_0_24px_rgba(103,232,249,0.14)] hover:border-cyan-100/60 hover:bg-cyan-100/18 hover:text-white"
+              href="/official-events/new"
+              variant="secondary"
+            >
+              Host an official event
+            </LinkButton>
+          </div>
         </header>
 
         <div className="grid gap-8">

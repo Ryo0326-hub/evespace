@@ -128,7 +128,13 @@ function readBoardBackgroundTheme(formData: FormData): BoardBackgroundTheme {
 }
 
 function readSharingScope(formData: FormData): BoardSharingScope {
-  return formData.get("sharingScope") === "followers" ? "followers" : "owner_only";
+  const value = formData.get("sharingScope");
+
+  if (value === "followers" || value === "public") {
+    return value;
+  }
+
+  return "owner_only";
 }
 
 function clean(value: FormDataEntryValue | null) {

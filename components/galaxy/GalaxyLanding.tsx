@@ -54,7 +54,7 @@ export function GalaxyLanding({
       router.push(
         event.boardType === "private_memory"
           ? `/boards/${event.id}`
-          : `/events/${event.slug}`,
+          : `/official-events/${event.id}`,
       );
     },
     [router],

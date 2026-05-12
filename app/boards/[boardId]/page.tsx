@@ -6,13 +6,16 @@ import { StickerStoreButton } from "@/components/board/StickerStoreButton";
 import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { boardBackgrounds } from "@/lib/constants";
+import { sharingScopeLabel } from "@/lib/boards/labels";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
 import {
   canManageBoard,
   canPostToBoard,
   getAccessibleBoardById,
 } from "@/lib/data/boards";
-import { getApprovedMemoryPostsByBoard } from "@/lib/data/memory-posts";
+import {
+  getApprovedMemoryPostsPageByBoard,
+} from "@/lib/data/memory-posts";
 import { getFollowRelationshipStatus } from "@/lib/data/follows";
 import { cn, compactDateLocation } from "@/lib/utils";
 
@@ -21,10 +24,13 @@ const postMemoryActionClassName =
 
 export default async function PrivateBoardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ boardId: string }>;
+  searchParams?: Promise<{ offset?: string }>;
 }) {
   const { boardId } = await params;
+  const offset = readOffset((await searchParams)?.offset);
   const { userId } = await auth();
   const profile = userId ? await ensureUserProfile() : null;
   const board = await getAccessibleBoardById(boardId, profile);
@@ -33,8 +39,8 @@ export default async function PrivateBoardPage({
     notFound();
   }
 
-  const [posts, canManage, canPost, followStatus] = await Promise.all([
-    getApprovedMemoryPostsByBoard(board.id),
+  const [postPage, canManage, canPost, followStatus] = await Promise.all([
+    getApprovedMemoryPostsPageByBoard(board.id, { offset }),
     canManageBoard(board.id, profile),
     canPostToBoard(board, profile),
     profile && board.ownerProfileId && board.ownerProfileId !== profile.id
@@ -79,7 +85,7 @@ export default async function PrivateBoardPage({
         <header className="my-7 grid gap-4 rounded-[2rem] border-2 border-black bg-white p-5 shadow-sm sm:my-10 sm:p-8">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
-              Private Memory Board
+              {sharingScopeLabel(board.sharingScope)}
             </p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-black sm:text-6xl">
               {board.title}
@@ -122,7 +128,19 @@ export default async function PrivateBoardPage({
         <Card className="overflow-visible border-black/10 bg-white/60 text-slate-950 shadow-sm">
           <MemoryBoard
             boardId={board.id}
-            posts={posts}
+            nextPageHref={
+              postPage.nextOffset === null
+                ? null
+                : `/boards/${board.id}?offset=${postPage.nextOffset}`
+            }
+            posts={postPage.posts}
+            previousPageHref={
+              postPage.previousOffset === null
+                ? null
+                : postPage.previousOffset === 0
+                  ? `/boards/${board.id}`
+                  : `/boards/${board.id}?offset=${postPage.previousOffset}`
+            }
             returnPath={`/boards/${board.id}`}
             viewerProfileId={profile?.id ?? null}
           />
@@ -130,4 +148,9 @@ export default async function PrivateBoardPage({
       </div>
     </main>
   );
+}
+
+function readOffset(value?: string) {
+  const offset = Number(value ?? 0);
+  return Number.isFinite(offset) && offset > 0 ? Math.floor(offset) : 0;
 }

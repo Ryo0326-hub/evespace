@@ -42,8 +42,10 @@ function MemoryPostSubmitButton({
 
 export function MemoryPostForm({
   action,
+  officialEvent = false,
 }: {
   action: (formData: FormData) => Promise<void>;
+  officialEvent?: boolean;
 }) {
   const formRef = useRef<HTMLFormElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -181,7 +183,9 @@ export function MemoryPostForm({
           <p className="text-xs leading-5 text-slate-400">
             Uploads are saved securely to Supabase Storage. Max size:{" "}
             {Math.round(maxUploadSizeBytes / 1024 / 1024)}MB.
-            Stickers can still be added from the memory board after posting.
+            {officialEvent
+              ? " Official event posts can include up to 3 stickers."
+              : " Stickers can still be added from the memory board after posting."}
           </p>
           {submitError ? (
             <p className="rounded-2xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-sm font-medium text-rose-100">

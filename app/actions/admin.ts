@@ -34,9 +34,11 @@ export async function verifyEventAction(eventId: string) {
   }
 
   revalidatePath("/");
+  revalidatePath("/");
   revalidatePath("/admin/official-events");
   revalidatePath("/admin/verification");
   revalidatePath("/notifications");
+  revalidatePath(`/official-events/${eventId}`);
 }
 
 export async function rejectEventVerificationAction(eventId: string, notes: string) {
@@ -64,4 +66,5 @@ export async function rejectEventVerificationAction(eventId: string, notes: stri
 
   revalidatePath("/admin/official-events");
   revalidatePath("/admin/verification");
+  revalidatePath(`/official-events/${eventId}`);
 }

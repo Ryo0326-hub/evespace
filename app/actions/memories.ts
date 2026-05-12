@@ -8,11 +8,18 @@ import { canPostToBoard, getAccessibleBoardById } from "@/lib/data/boards";
 import { getEventBySlug } from "@/lib/data/events";
 import { createMemoryPostAddedNotifications } from "@/lib/data/notifications";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
-import { acceptedImageTypes, maxUploadSizeBytes } from "@/lib/constants";
+import {
+  acceptedImageTypes,
+  legacyMemoryPhotoBucket,
+  maxUploadSizeBytes,
+  memoryPostMediaBucket,
+} from "@/lib/constants";
 import { isRegisteredStickerId } from "@/lib/stickers/sticker-registry";
 import type {
+  Board,
   MemoryPostStatus,
   PlacedSticker,
+  Profile,
   StickerPlacement,
   StickerSelection,
 } from "@/types/evespace";
@@ -34,6 +41,13 @@ export async function createPrivateBoardMemoryPostAction(
   formData: FormData,
 ) {
   await createBoardMemoryPost(boardId, formData, `/boards/${boardId}`);
+}
+
+export async function createOfficialEventMemoryPostAction(
+  boardId: string,
+  formData: FormData,
+) {
+  await createBoardMemoryPost(boardId, formData, `/official-events/${boardId}/board`);
 }
 
 async function createBoardMemoryPost(
@@ -66,51 +80,89 @@ async function createBoardMemoryPost(
     throw new Error("Image must be 5MB or smaller.");
   }
 
-  const safeName = photo.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-  const storagePath = `${board.id}/${profile.clerkUserId}/${Date.now()}-${safeName}`;
-  const bytes = Buffer.from(await photo.arrayBuffer());
-  const { error: uploadError } = await supabase.storage
-    .from("memory-photos")
-    .upload(storagePath, bytes, {
-      contentType: photo.type,
-      upsert: false,
-    });
+  const stickers = readStickers(formData, {
+    rejectOverLimit: board.boardType === "official_event",
+  });
 
-  if (uploadError) {
-    throw new Error(uploadError.message);
+  const status = "approved";
+  let uploadedMedia: UploadedMemoryMedia | null = null;
+  let insertResult = await insertMemoryPostRecord({
+    board,
+    formData,
+    legacyImageUrl: null,
+    legacyStickers: [],
+    legacyStoragePath: null,
+    profile,
+    status,
+  });
+  let post = insertResult.post;
+
+  if (!post && isLegacyImageUrlRequiredError(insertResult.error)) {
+    uploadedMedia = await uploadMemoryMedia({
+      boardId: board.id,
+      file: photo,
+      pathOwner: profile.clerkUserId,
+      supabase,
+    });
+    insertResult = await insertMemoryPostRecord({
+      board,
+      formData,
+      legacyImageUrl: uploadedMedia.publicUrl,
+      legacyStickers: stickers,
+      legacyStoragePath: uploadedMedia.storagePath,
+      profile,
+      status,
+    });
+    post = insertResult.post;
   }
 
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from("memory-photos").getPublicUrl(storagePath);
-  const status = "approved";
+  if (!post) {
+    throw new Error(insertResult.error?.message ?? "Memory post could not be saved.");
+  }
 
-  const { data: post, error } = await supabase
-    .from("memory_posts")
-    .insert({
-      board_id: board.id,
-      event_id: board.boardType === "official_event" ? board.id : null,
-      profile_id: profile.id,
-      clerk_user_id: profile.clerkUserId,
-      author_display_name:
-        clean(formData.get("authorDisplayName")) ||
-        profile.displayName ||
-        profile.email ||
-        "Anonymous",
-      image_url: publicUrl,
-      storage_path: storagePath,
-      caption: clean(formData.get("caption")),
-      stickers: readStickers(formData),
-      status,
-      frame_style: "none",
-      sticky_note_style: "default",
-      rotation: 0,
-    })
-    .select("id")
-    .single();
+  try {
+    if (!uploadedMedia) {
+      uploadedMedia = await uploadMemoryMedia({
+        boardId: board.id,
+        file: photo,
+        pathOwner: String(post.id),
+        supabase,
+      });
+    }
 
-  if (error) {
-    throw new Error(error.message);
+    const mediaSaved = await insertMemoryPostMedia({
+      boardId: board.id,
+      file: photo,
+      media: uploadedMedia,
+      postId: String(post.id),
+      supabase,
+    });
+    const stickersSaved = await insertCornerStickerRows({
+      boardId: board.id,
+      postId: String(post.id),
+      stickers,
+      supabase,
+    });
+
+    if (!mediaSaved || !stickersSaved) {
+      await updateLegacyMemoryPostAssets({
+        imageUrl: uploadedMedia.publicUrl,
+        postId: String(post.id),
+        stickers,
+        storagePath: uploadedMedia.storagePath,
+        supabase,
+      });
+    }
+  } catch (error) {
+    await supabase.from("memory_posts").delete().eq("id", post.id);
+
+    if (uploadedMedia) {
+      await supabase.storage
+        .from(uploadedMedia.storageBucket)
+        .remove([uploadedMedia.storagePath]);
+    }
+
+    throw error;
   }
 
   await createMemoryPostAddedNotifications({
@@ -123,8 +175,250 @@ async function createBoardMemoryPost(
   revalidatePath("/notifications");
   if (board.boardType === "official_event") {
     revalidatePath(`/events/${board.slug}`);
+    revalidatePath(`/official-events/${board.id}`);
+    revalidatePath(`/official-events/${board.id}/board`);
   }
   redirect(`${returnPath}?posted=approved`);
+}
+
+type SupabaseAdminClient = NonNullable<ReturnType<typeof getSupabaseAdminClient>>;
+
+type MemoryPostInsertError = {
+  code?: string;
+  message?: string;
+} | null;
+
+type UploadedMemoryMedia = {
+  publicUrl: string;
+  storageBucket: string;
+  storagePath: string;
+};
+
+async function insertMemoryPostRecord({
+  board,
+  formData,
+  legacyImageUrl,
+  legacyStickers,
+  legacyStoragePath,
+  profile,
+  status,
+}: {
+  board: Board;
+  formData: FormData;
+  legacyImageUrl: string | null;
+  legacyStickers: StickerSelection[];
+  legacyStoragePath: string | null;
+  profile: Profile;
+  status: MemoryPostStatus;
+}): Promise<{
+  post: { id: string } | null;
+  error: MemoryPostInsertError;
+}> {
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    return {
+      post: null,
+      error: { message: "Supabase service role is not configured." },
+    };
+  }
+
+  const payload = {
+    board_id: board.id,
+    event_id: board.boardType === "official_event" ? board.id : null,
+    author_id: profile.id,
+    profile_id: profile.id,
+    clerk_user_id: profile.clerkUserId,
+    author_display_name:
+      clean(formData.get("authorDisplayName")) ||
+      profile.displayName ||
+      profile.email ||
+      "Anonymous",
+    image_url: legacyImageUrl,
+    storage_path: legacyStoragePath,
+    caption: clean(formData.get("caption")),
+    stickers: legacyStickers,
+    status,
+    frame_style: "none",
+    sticky_note_style: "default",
+    rotation: 0,
+  };
+
+  const { data, error } = await supabase
+    .from("memory_posts")
+    .insert(payload)
+    .select("id")
+    .single();
+
+  if (error) {
+    if (isMissingAuthorIdColumnError(error)) {
+      const legacyPayload: Partial<typeof payload> = { ...payload };
+      delete legacyPayload.author_id;
+      const { data: legacyData, error: legacyError } = await supabase
+        .from("memory_posts")
+        .insert(legacyPayload)
+        .select("id")
+        .single();
+
+      if (legacyError) {
+        return { post: null, error: legacyError };
+      }
+
+      return { post: { id: String(legacyData.id) }, error: null };
+    }
+
+    return { post: null, error };
+  }
+
+  return { post: { id: String(data.id) }, error: null };
+}
+
+async function uploadMemoryMedia({
+  boardId,
+  file,
+  pathOwner,
+  supabase,
+}: {
+  boardId: string;
+  file: File;
+  pathOwner: string;
+  supabase: SupabaseAdminClient;
+}): Promise<UploadedMemoryMedia> {
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+  const storagePath = `${boardId}/${pathOwner}/${Date.now()}-${safeName}`;
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const buckets = [memoryPostMediaBucket, legacyMemoryPhotoBucket];
+  let lastError: Error | null = null;
+
+  for (const bucket of buckets) {
+    const { error } = await supabase.storage
+      .from(bucket)
+      .upload(storagePath, bytes, {
+        contentType: file.type,
+        upsert: false,
+      });
+
+    if (!error) {
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from(bucket).getPublicUrl(storagePath);
+
+      return {
+        publicUrl,
+        storageBucket: bucket,
+        storagePath,
+      };
+    }
+
+    lastError = new Error(error.message);
+
+    if (!isMissingStorageBucketError(error) || bucket === legacyMemoryPhotoBucket) {
+      break;
+    }
+  }
+
+  throw lastError ?? new Error("Media upload failed.");
+}
+
+async function insertMemoryPostMedia({
+  boardId,
+  file,
+  media,
+  postId,
+  supabase,
+}: {
+  boardId: string;
+  file: File;
+  media: UploadedMemoryMedia;
+  postId: string;
+  supabase: SupabaseAdminClient;
+}) {
+  const { error } = await supabase.from("memory_post_media").insert({
+    post_id: postId,
+    board_id: boardId,
+    storage_bucket: media.storageBucket,
+    storage_path: media.storagePath,
+    media_type: "image",
+    mime_type: file.type,
+    byte_size: file.size,
+    original_file_name: file.name,
+    sort_order: 0,
+  });
+
+  if (!error) {
+    return true;
+  }
+
+  if (isMissingNormalizedMemoryTableError(error)) {
+    return false;
+  }
+
+  throw new Error(error.message);
+}
+
+async function insertCornerStickerRows({
+  boardId,
+  postId,
+  stickers,
+  supabase,
+}: {
+  boardId: string;
+  postId: string;
+  stickers: StickerSelection[];
+  supabase: SupabaseAdminClient;
+}) {
+  if (stickers.length === 0) {
+    return true;
+  }
+
+  const { error } = await supabase.from("memory_post_stickers").insert(
+    stickers.map((sticker, index) => ({
+      post_id: postId,
+      board_id: boardId,
+      sticker_id: sticker.stickerId,
+      sticker_kind: "corner",
+      placement: sticker.placement,
+      sort_order: index,
+    })),
+  );
+
+  if (!error) {
+    return true;
+  }
+
+  if (isMissingNormalizedMemoryTableError(error)) {
+    return false;
+  }
+
+  throw new Error(error.message);
+}
+
+async function updateLegacyMemoryPostAssets({
+  imageUrl,
+  postId,
+  stickers,
+  storagePath,
+  supabase,
+}: {
+  imageUrl: string;
+  postId: string;
+  stickers: StickerSelection[];
+  storagePath: string;
+  supabase: SupabaseAdminClient;
+}) {
+  const { error } = await supabase
+    .from("memory_posts")
+    .update({
+      image_url: imageUrl,
+      storage_path: storagePath,
+      stickers,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", postId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }
 
 export async function moderatePostAction(formData: FormData) {
@@ -258,13 +552,19 @@ export async function createMemoryCommentAction(
     return { error: error.message, ok: false };
   }
 
-  revalidatePath(
-    board.boardType === "official_event" ? `/events/${board.slug}/board` : `/boards/${board.id}`,
-  );
+  if (board.boardType === "official_event") {
+    revalidatePath(`/events/${board.slug}/board`);
+    revalidatePath(`/official-events/${board.id}/board`);
+  } else {
+    revalidatePath(`/boards/${board.id}`);
+  }
   return { error: null, ok: true };
 }
 
-function readStickers(formData: FormData): StickerSelection[] {
+function readStickers(
+  formData: FormData,
+  options: { rejectOverLimit?: boolean } = {},
+): StickerSelection[] {
   const raw = String(formData.get("stickers") ?? "[]");
   let parsed: unknown;
 
@@ -276,6 +576,10 @@ function readStickers(formData: FormData): StickerSelection[] {
 
   if (!Array.isArray(parsed)) {
     return [];
+  }
+
+  if (options.rejectOverLimit && parsed.length > 3) {
+    throw new Error("Official event posts can include up to 3 stickers.");
   }
 
   const usedPlacements = new Set<string>();
@@ -402,20 +706,33 @@ export async function syncOverlayStickersAction(payload: {
 
   for (const postId of ownedIds) {
     const rawList = incomingByPost.get(postId) ?? [];
+
+    if (board.boardType === "official_event" && rawList.length > 3) {
+      throw new Error("Official event posts can include up to 3 stickers.");
+    }
+
     const sanitized = rawList.filter(sanitizePersistedOverlay).slice(0, 3);
-    const overlayJson = sanitized.map(overlayToJson);
+    const savedNormalized = await replaceOverlayStickerRows({
+      boardId: board.id,
+      postId,
+      stickers: sanitized,
+      supabase,
+    });
 
-    const { error } = await supabase
-      .from("memory_posts")
-      .update({
-        overlay_stickers: overlayJson,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", postId)
-      .eq("profile_id", profile.id);
-
-    if (error) {
-      throw new Error(error.message);
+    if (!savedNormalized) {
+      await updateLegacyOverlayStickers({
+        postId,
+        profileId: profile.id,
+        stickers: sanitized,
+        supabase,
+      });
+    } else {
+      await updateLegacyOverlayStickers({
+        postId,
+        profileId: profile.id,
+        stickers: [],
+        supabase,
+      });
     }
   }
 
@@ -424,5 +741,121 @@ export async function syncOverlayStickersAction(payload: {
   if (board.boardType === "official_event") {
     revalidatePath(`/events/${board.slug}/board`);
     revalidatePath(`/events/${board.slug}`);
+    revalidatePath(`/official-events/${board.id}/board`);
+    revalidatePath(`/official-events/${board.id}`);
   }
+}
+
+async function replaceOverlayStickerRows({
+  boardId,
+  postId,
+  stickers,
+  supabase,
+}: {
+  boardId: string;
+  postId: string;
+  stickers: PlacedSticker[];
+  supabase: SupabaseAdminClient;
+}) {
+  const deleteResult = await supabase
+    .from("memory_post_stickers")
+    .delete()
+    .eq("post_id", postId)
+    .eq("sticker_kind", "overlay");
+
+  if (deleteResult.error) {
+    if (isMissingNormalizedMemoryTableError(deleteResult.error)) {
+      return false;
+    }
+
+    throw new Error(deleteResult.error.message);
+  }
+
+  if (stickers.length === 0) {
+    return true;
+  }
+
+  const { error } = await supabase.from("memory_post_stickers").insert(
+    stickers.map((sticker, index) => ({
+      post_id: postId,
+      board_id: boardId,
+      sticker_id: sticker.stickerId,
+      sticker_kind: "overlay",
+      x: clampUnitInterval(sticker.x),
+      y: clampUnitInterval(sticker.y),
+      rotation: Number.isFinite(sticker.rotation) ? sticker.rotation : 0,
+      size:
+        Number.isFinite(sticker.size) && sticker.size > 20
+          ? Math.min(sticker.size, 140)
+          : 68,
+      client_sticker_id: sticker.id,
+      sort_order: index,
+    })),
+  );
+
+  if (!error) {
+    return true;
+  }
+
+  if (isMissingNormalizedMemoryTableError(error)) {
+    return false;
+  }
+
+  throw new Error(error.message);
+}
+
+async function updateLegacyOverlayStickers({
+  postId,
+  profileId,
+  stickers,
+  supabase,
+}: {
+  postId: string;
+  profileId: string;
+  stickers: PlacedSticker[];
+  supabase: SupabaseAdminClient;
+}) {
+  const { error } = await supabase
+    .from("memory_posts")
+    .update({
+      overlay_stickers: stickers.map(overlayToJson),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", postId)
+    .eq("profile_id", profileId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+function isLegacyImageUrlRequiredError(error: MemoryPostInsertError) {
+  const message = String(error?.message ?? "").toLowerCase();
+  return error?.code === "23502" && message.includes("image_url");
+}
+
+function isMissingAuthorIdColumnError(error: MemoryPostInsertError) {
+  const message = String(error?.message ?? "").toLowerCase();
+  return (
+    error?.code === "PGRST204" ||
+    (message.includes("author_id") &&
+      (message.includes("could not find") || message.includes("schema cache")))
+  );
+}
+
+function isMissingStorageBucketError(error: { message?: string }) {
+  const message = String(error.message ?? "").toLowerCase();
+  return message.includes("bucket") && message.includes("not found");
+}
+
+function isMissingNormalizedMemoryTableError(error: { code?: string; message?: string }) {
+  const message = String(error.message ?? "").toLowerCase();
+  return (
+    error.code === "42P01" ||
+    error.code === "PGRST205" ||
+    (message.includes("memory_post_media") &&
+      (message.includes("does not exist") || message.includes("could not find"))) ||
+    (message.includes("memory_post_stickers") &&
+      (message.includes("does not exist") || message.includes("could not find")))
+  );
 }

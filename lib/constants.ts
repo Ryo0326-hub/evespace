@@ -77,3 +77,9 @@ export const moderationModes: ModerationMode[] = ["pre_approval", "post_first"];
 export const acceptedImageTypes = ["image/jpeg", "image/png", "image/webp"];
 
 export const maxUploadSizeBytes = 5 * 1024 * 1024;
+
+export const memoryPostMediaBucket = "memory-post-media";
+
+export const legacyMemoryPhotoBucket = "memory-photos";
+
+export const memoryPostPageSize = 30;

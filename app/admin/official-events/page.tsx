@@ -56,7 +56,7 @@ export default async function AdminOfficialEventsPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <LinkButton href={`/events/${board.slug}`} variant="ghost">
+                  <LinkButton href={`/official-events/${board.id}`} variant="ghost">
                     View
                   </LinkButton>
                   <LinkButton

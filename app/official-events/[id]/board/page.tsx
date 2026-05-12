@@ -1,36 +1,41 @@
 import { notFound } from "next/navigation";
-import { Show, SignInButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { MemoryBoard } from "@/components/board/MemoryBoard";
 import { StickerStoreButton } from "@/components/board/StickerStoreButton";
 import { LinkButton } from "@/components/ui/Button";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
 import { boardBackgrounds } from "@/lib/constants";
-import { getEventBySlug } from "@/lib/data/events";
+import {
+  canPostToBoard,
+  getAccessibleBoardById,
+} from "@/lib/data/boards";
 import { getApprovedMemoryPostsPageByBoard } from "@/lib/data/memory-posts";
 import { cn } from "@/lib/utils";
 
 const postMemoryActionClassName =
   "inline-flex min-h-11 w-full items-center justify-center rounded-full border border-cyan-300/70 !bg-slate-950 px-5 py-2.5 text-sm font-semibold !text-cyan-50 shadow-[0_0_24px_rgba(8,145,178,0.28)] transition hover:border-cyan-100 hover:!bg-slate-900 hover:!text-white sm:w-auto";
 
-export default async function MemoryBoardPage({
+export default async function OfficialEventMemoryBoardPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ eventSlug: string }>;
+  params: Promise<{ id: string }>;
   searchParams?: Promise<{ offset?: string }>;
 }) {
-  const { eventSlug } = await params;
+  const { id } = await params;
   const offset = readOffset((await searchParams)?.offset);
-  const event = await getEventBySlug(eventSlug);
+  const { userId } = await auth();
+  const profile = userId ? await ensureUserProfile() : null;
+  const event = await getAccessibleBoardById(id, profile);
 
-  if (!event) {
+  if (!event || event.boardType !== "official_event") {
     notFound();
   }
 
-  const { userId } = await auth();
-  const profile = userId ? await ensureUserProfile() : null;
-  const postPage = await getApprovedMemoryPostsPageByBoard(event.id, { offset });
+  const [postPage, canPost] = await Promise.all([
+    getApprovedMemoryPostsPageByBoard(event.id, { offset }),
+    canPostToBoard(event, profile),
+  ]);
   const background = boardBackgrounds[event.boardBackgroundTheme];
 
   return (
@@ -48,27 +53,24 @@ export default async function MemoryBoardPage({
           <nav className="grid grid-cols-1 gap-3 sm:flex sm:items-center sm:justify-between">
             <LinkButton
               className="w-full sm:w-auto"
-              href={`/events/${event.slug}`}
+              href={`/official-events/${event.id}`}
               variant="ghost"
             >
               Back to Event
             </LinkButton>
             <div className="flex flex-wrap gap-2" id="memory-board-actions">
-              <Show when="signed-in">
+              {canPost ? (
                 <LinkButton
                   className={postMemoryActionClassName}
-                  href={`/events/${event.slug}/post`}
+                  href={`/official-events/${event.id}/post`}
                 >
                   Post Memory
                 </LinkButton>
-              </Show>
-              <Show when="signed-out">
-                <SignInButton mode="modal">
-                  <button className={postMemoryActionClassName} type="button">
-                    Post Memory
-                  </button>
-                </SignInButton>
-              </Show>
+              ) : !profile ? (
+                <LinkButton className={postMemoryActionClassName} href="/login">
+                  Sign in to Post
+                </LinkButton>
+              ) : null}
               <StickerStoreButton />
             </div>
           </nav>
@@ -76,13 +78,14 @@ export default async function MemoryBoardPage({
 
         <header className="my-7 max-w-3xl sm:my-10">
           <p className="text-sm font-bold uppercase tracking-[0.35em] text-slate-600">
-            Memory Board
+            Official Event Memory Board
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-black sm:text-5xl lg:text-6xl">
             {event.title}
           </h1>
           <p className="mt-4 text-sm leading-7 text-slate-700 sm:text-base">
-            Browse approved photo memories from everyone who entered this event world.
+            Browse approved memories from this official event. Official event
+            posts can include up to 3 stickers.
           </p>
         </header>
 
@@ -91,17 +94,17 @@ export default async function MemoryBoardPage({
           nextPageHref={
             postPage.nextOffset === null
               ? null
-              : `/events/${event.slug}/board?offset=${postPage.nextOffset}`
+              : `/official-events/${event.id}/board?offset=${postPage.nextOffset}`
           }
           posts={postPage.posts}
           previousPageHref={
             postPage.previousOffset === null
               ? null
               : postPage.previousOffset === 0
-                ? `/events/${event.slug}/board`
-                : `/events/${event.slug}/board?offset=${postPage.previousOffset}`
+                ? `/official-events/${event.id}/board`
+                : `/official-events/${event.id}/board?offset=${postPage.previousOffset}`
           }
-          returnPath={`/events/${event.slug}/board`}
+          returnPath={`/official-events/${event.id}/board`}
           viewerProfileId={profile?.id ?? null}
         />
       </div>

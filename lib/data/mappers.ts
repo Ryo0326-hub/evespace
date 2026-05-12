@@ -5,6 +5,8 @@ import type {
   EventSchedule,
   MemoryPost,
   MemoryPostComment,
+  MemoryPostMedia,
+  OfficialEventGoodsService,
   PlacedSticker,
   Profile,
   StickerSelection,
@@ -59,7 +61,6 @@ export function mapBoard(row: DbEvent): Board {
         : "public",
     sharingScope:
       row.sharing_scope === "followers" ||
-      row.sharing_scope === "selected_users" ||
       row.sharing_scope === "public"
         ? row.sharing_scope
         : "owner_only",
@@ -90,6 +91,20 @@ export function mapBoard(row: DbEvent): Board {
     officialWebsiteUrl: (row.official_website_url as string | null) ?? null,
     officialSocialUrl: (row.official_social_url as string | null) ?? null,
     organizerEmail: (row.organizer_email as string | null) ?? null,
+    accessInformation: (row.official_access_information as string | null) ?? null,
+    officialSharingScope: readOfficialSharingScope(row.official_sharing_scope),
+    postingPermission:
+      row.posting_permission === "approved_users"
+        ? "approved_users"
+        : "signed_in_users",
+    allowedUserIds: readStringList(row.allowed_user_ids),
+    allowedEmails: readStringList(row.allowed_emails).map((email) =>
+      email.toLowerCase(),
+    ),
+    allowedOrganizationDomains: readStringList(row.allowed_organization_domains)
+      .map((domain) => domain.toLowerCase().replace(/^@/, ""))
+      .filter(Boolean),
+    isVerified: row.verification_status === "verified",
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };
@@ -115,6 +130,46 @@ export function mapSchedule(row: DbEvent): EventSchedule {
   };
 }
 
+export function mapOfficialEventGoodsService(row: DbEvent): OfficialEventGoodsService {
+  return {
+    id: String(row.id),
+    officialEventId: String(row.board_id ?? row.official_event_id),
+    name: String(row.name),
+    description: (row.description as string | null) ?? null,
+    price: (row.price as string | null) ?? null,
+    imageUrl: (row.image_url as string | null) ?? null,
+    externalLink: (row.external_link as string | null) ?? null,
+    sortOrder: Number(row.sort_order ?? 0),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+function readOfficialSharingScope(value: unknown) {
+  if (value === "selected_people" || value === "organization") {
+    return value;
+  }
+
+  return "public";
+}
+
+function readStringList(value: unknown) {
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => String(item).trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
+}
+
 export function mapMemoryPost(row: DbEvent): MemoryPost {
   return {
     id: String(row.id),
@@ -124,10 +179,13 @@ export function mapMemoryPost(row: DbEvent): MemoryPost {
       (row.user_id as string | null) ??
       (row.clerk_user_id as string | null) ??
       null,
-    profileId: (row.profile_id as string | null) ?? null,
+    profileId:
+      (row.profile_id as string | null) ??
+      (row.author_id as string | null) ??
+      null,
     clerkUserId: (row.clerk_user_id as string | null) ?? null,
     authorDisplayName: (row.author_display_name as string | null) ?? null,
-    imageUrl: String(row.image_url),
+    imageUrl: String(row.image_url ?? ""),
     storagePath: (row.storage_path as string | null) ?? null,
     caption: (row.caption as string | null) ?? null,
     stickers: parseStickers(row.stickers),
@@ -158,6 +216,36 @@ export function mapMemoryPost(row: DbEvent): MemoryPost {
         ? row.status
         : "pending",
     comments: [],
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+export function mapMemoryPostMedia(row: DbEvent): MemoryPostMedia {
+  return {
+    id: String(row.id),
+    postId: String(row.post_id),
+    boardId: (row.board_id as string | null) ?? null,
+    storageBucket: String(row.storage_bucket ?? ""),
+    storagePath: String(row.storage_path ?? ""),
+    mediaType:
+      row.media_type === "video" ||
+      row.media_type === "audio" ||
+      row.media_type === "other"
+        ? row.media_type
+        : "image",
+    mimeType: (row.mime_type as string | null) ?? null,
+    byteSize:
+      typeof row.byte_size === "number"
+        ? row.byte_size
+        : row.byte_size
+          ? Number(row.byte_size)
+          : null,
+    originalFileName: (row.original_file_name as string | null) ?? null,
+    width: typeof row.width === "number" ? row.width : null,
+    height: typeof row.height === "number" ? row.height : null,
+    altText: (row.alt_text as string | null) ?? null,
+    sortOrder: Number(row.sort_order ?? 0),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };

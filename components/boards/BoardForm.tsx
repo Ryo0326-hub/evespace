@@ -55,9 +55,9 @@ export function BoardForm({
 
         <Field label="Sharing scope">
           <Select name="sharingScope" defaultValue={board?.sharingScope ?? "owner_only"}>
-            <option value="owner_only">owner only (only visible to yourself)</option>
-            <option value="followers">followers only (accessible to your followers)</option>
-            <option value="public">public (accessible to the public)</option>
+            <option value="owner_only">Owner only</option>
+            <option value="followers">Followers only</option>
+            <option value="public">Public</option>
           </Select>
         </Field>
 

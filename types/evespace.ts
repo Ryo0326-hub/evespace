@@ -9,7 +9,6 @@ export type EventVisibility = BoardVisibility;
 export type BoardSharingScope =
   | "owner_only"
   | "followers"
-  | "selected_users"
   | "public";
 
 export type ModerationMode = "pre_approval" | "post_first";
@@ -26,6 +25,15 @@ export type VerificationStatus =
   | "rejected";
 
 export type EventVerificationStatus = Exclude<VerificationStatus, "not_applicable">;
+
+export type OfficialEventSharingScope =
+  | "public"
+  | "selected_people"
+  | "organization";
+
+export type OfficialEventPostingPermission =
+  | "signed_in_users"
+  | "approved_users";
 
 export type BoardBackgroundTheme =
   | "soft_cream"
@@ -121,6 +129,13 @@ export type Board = {
   officialWebsiteUrl: string | null;
   officialSocialUrl: string | null;
   organizerEmail: string | null;
+  accessInformation: string | null;
+  officialSharingScope: OfficialEventSharingScope;
+  postingPermission: OfficialEventPostingPermission;
+  allowedUserIds: string[];
+  allowedEmails: string[];
+  allowedOrganizationDomains: string[];
+  isVerified: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -136,6 +151,19 @@ export type EventSchedule = {
   locationName: string | null;
   startTime: string | null;
   endTime: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type OfficialEventGoodsService = {
+  id: string;
+  officialEventId: string;
+  name: string;
+  description: string | null;
+  price: string | null;
+  imageUrl: string | null;
+  externalLink: string | null;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -167,6 +195,24 @@ export type MemoryPost = {
   rotation: number;
   status: MemoryPostStatus;
   comments: MemoryPostComment[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MemoryPostMedia = {
+  id: string;
+  postId: string;
+  boardId: string | null;
+  storageBucket: string;
+  storagePath: string;
+  mediaType: "image" | "video" | "audio" | "other";
+  mimeType: string | null;
+  byteSize: number | null;
+  originalFileName: string | null;
+  width: number | null;
+  height: number | null;
+  altText: string | null;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -221,6 +267,12 @@ export type EventInput = {
   officialWebsiteUrl?: string | null;
   officialSocialUrl?: string | null;
   organizerEmail?: string | null;
+  accessInformation?: string | null;
+  officialSharingScope?: OfficialEventSharingScope;
+  postingPermission?: OfficialEventPostingPermission;
+  allowedUserIds?: string[];
+  allowedEmails?: string[];
+  allowedOrganizationDomains?: string[];
   verificationStatus?: VerificationStatus;
 };
 

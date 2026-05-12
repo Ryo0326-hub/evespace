@@ -2,12 +2,17 @@ import { mapBoard } from "@/lib/data/mappers";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { generateStarCoordinate, slugify } from "@/lib/utils";
-import type { Board, BoardInput, BoardSharingScope, Profile } from "@/types/evespace";
+import type {
+  Board,
+  BoardInput,
+  BoardSharingScope,
+  Profile,
+} from "@/types/evespace";
 
 const BOARD_SELECT = "*, profiles:owner_profile_id(display_name, avatar_url, clerk_user_id)";
 
 export async function getPublicOfficialBoards(): Promise<Board[]> {
-  const supabase = await getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient() ?? getSupabaseServerClient();
 
   if (!supabase) {
     return [];
@@ -18,7 +23,8 @@ export async function getPublicOfficialBoards(): Promise<Board[]> {
     .select(BOARD_SELECT)
     .eq("board_type", "official_event")
     .eq("visibility", "public")
-    .eq("verification_status", "verified")
+    .eq("official_sharing_scope", "public")
+    .in("verification_status", ["unverified", "pending_review", "verified"])
     .order("start_time", { ascending: true, nullsFirst: false });
 
   if (error) {
@@ -27,6 +33,37 @@ export async function getPublicOfficialBoards(): Promise<Board[]> {
   }
 
   return data.map(mapBoard);
+}
+
+export async function getPublicMemoryBoards(): Promise<Board[]> {
+  const supabase = getSupabaseAdminClient() ?? getSupabaseServerClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("boards")
+    .select(BOARD_SELECT)
+    .eq("board_type", "private_memory")
+    .eq("sharing_scope", "public")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    logBoardDataError("Failed to load public memory boards", error);
+    return [];
+  }
+
+  return data.map(mapBoard);
+}
+
+export async function getPublicGalaxyBoards(): Promise<Board[]> {
+  const [officialBoards, publicMemoryBoards] = await Promise.all([
+    getPublicOfficialBoards(),
+    getPublicMemoryBoards(),
+  ]);
+
+  return sortGalaxyBoards([...officialBoards, ...publicMemoryBoards]);
 }
 
 export async function getOfficialBoardBySlug(slug: string): Promise<Board | null> {
@@ -85,11 +122,7 @@ export async function getAccessibleBoardById(
   }
 
   if (board.boardType === "official_event") {
-    return board.visibility === "public" && board.verificationStatus === "verified"
-      ? board
-      : await canManageBoard(board.id, profile)
-        ? board
-        : null;
+    return (await canViewOfficialEventBoard(board, profile)) ? board : null;
   }
 
   if (await canViewPrivateBoard(board, profile)) {
@@ -135,6 +168,42 @@ export async function canViewPrivateBoard(board: Board, profile: Profile | null)
   return false;
 }
 
+export async function canViewOfficialEventBoard(
+  board: Board,
+  profile: Profile | null,
+) {
+  if (board.boardType !== "official_event" || board.verificationStatus === "rejected") {
+    return false;
+  }
+
+  if (await canManageBoard(board.id, profile)) {
+    return true;
+  }
+
+  if (board.officialSharingScope === "public") {
+    return board.visibility === "public";
+  }
+
+  if (!profile) {
+    return false;
+  }
+
+  if (board.officialSharingScope === "selected_people") {
+    const email = profile.email?.toLowerCase() ?? "";
+    return (
+      board.allowedUserIds.includes(profile.id) ||
+      Boolean(email && board.allowedEmails.includes(email))
+    );
+  }
+
+  if (board.officialSharingScope === "organization") {
+    const domain = getEmailDomain(profile.email);
+    return Boolean(domain && board.allowedOrganizationDomains.includes(domain));
+  }
+
+  return false;
+}
+
 export async function canPostToBoard(board: Board, profile: Profile | null) {
   if (!profile) {
     return false;
@@ -145,7 +214,14 @@ export async function canPostToBoard(board: Board, profile: Profile | null) {
   }
 
   if (board.boardType === "official_event") {
-    return board.visibility === "public" && board.verificationStatus === "verified";
+    if (!(await canViewOfficialEventBoard(board, profile))) {
+      return false;
+    }
+
+    return (
+      board.postingPermission === "signed_in_users" ||
+      (await canManageBoard(board.id, profile))
+    );
   }
 
   if (board.sharingScope === "followers") {
@@ -274,22 +350,54 @@ export async function getUserSharedBoards(userId: string, viewerProfile: Profile
 }
 
 export async function getGalaxyBoardsForProfile(profile: Profile): Promise<Board[]> {
-  const [officialBoards, ownedBoards, friendBoards] = await Promise.all([
-    getPublicOfficialBoards(),
+  const [officialBoards, publicMemoryBoards, ownedBoards, friendBoards] = await Promise.all([
+    getAccessibleOfficialBoardsForProfile(profile),
+    getPublicMemoryBoards(),
     getOwnedPrivateBoards(profile.clerkUserId),
     getFriendBoards(profile),
   ]);
   const byId = new Map<string, Board>();
 
-  [...officialBoards, ...ownedBoards, ...friendBoards].forEach((board) => {
+  [...officialBoards, ...publicMemoryBoards, ...ownedBoards, ...friendBoards].forEach((board) => {
     byId.set(board.id, board);
   });
 
-  return Array.from(byId.values()).sort((a, b) => {
-    const aTime = a.startTime ? Date.parse(a.startTime) : 0;
-    const bTime = b.startTime ? Date.parse(b.startTime) : 0;
-    return aTime - bTime;
-  });
+  return sortGalaxyBoards(Array.from(byId.values()));
+}
+
+export async function getAccessibleOfficialBoardsForProfile(
+  profile: Profile,
+): Promise<Board[]> {
+  const supabase = getSupabaseAdminClient() ?? getSupabaseServerClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("boards")
+    .select(BOARD_SELECT)
+    .eq("board_type", "official_event")
+    .eq("visibility", "public")
+    .in("verification_status", ["unverified", "pending_review", "verified"])
+    .order("start_time", { ascending: true, nullsFirst: false });
+
+  if (error) {
+    logBoardDataError("Failed to load accessible official boards", error);
+    return [];
+  }
+
+  const boards = data.map(mapBoard);
+  const accessPairs = await Promise.all(
+    boards.map(async (board) => ({
+      board,
+      canView: await canViewOfficialEventBoard(board, profile),
+    })),
+  );
+
+  return accessPairs
+    .filter(({ canView }) => canView)
+    .map(({ board }) => board);
 }
 
 export async function getManagedOfficialBoards(profile: Profile): Promise<Board[]> {
@@ -387,30 +495,58 @@ export async function updateBoard(boardId: string, input: BoardInput) {
     return { data: null, error: "Supabase service role is not configured." };
   }
 
+  const updatePayload: Record<string, unknown> = {
+    title: input.title,
+    slug: input.slug || slugify(input.title),
+    description: input.description ?? null,
+    category: input.category ?? null,
+    start_time: input.startTime || null,
+    end_time: input.endTime || null,
+    location_name: input.locationName ?? null,
+    address: input.address ?? null,
+    google_maps_url: input.googleMapsUrl ?? null,
+    latitude: input.latitude ?? null,
+    longitude: input.longitude ?? null,
+    selling_goods: input.sellingGoods ?? false,
+    goods_description: input.goodsDescription ?? null,
+    board_background_theme: input.boardBackgroundTheme ?? "soft_cream",
+    moderation_mode: input.moderationMode ?? "post_first",
+    sharing_scope: input.sharingScope ?? "owner_only",
+    official_website_url: input.officialWebsiteUrl ?? null,
+    official_social_url: input.officialSocialUrl ?? null,
+    organizer_email: input.organizerEmail ?? null,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (input.accessInformation !== undefined) {
+    updatePayload.official_access_information = input.accessInformation ?? null;
+  }
+
+  if (input.officialSharingScope !== undefined) {
+    updatePayload.official_sharing_scope = input.officialSharingScope;
+  }
+
+  if (input.postingPermission !== undefined) {
+    updatePayload.posting_permission = input.postingPermission;
+  }
+
+  if (input.allowedUserIds !== undefined) {
+    updatePayload.allowed_user_ids = sanitizeStringList(input.allowedUserIds);
+  }
+
+  if (input.allowedEmails !== undefined) {
+    updatePayload.allowed_emails = sanitizeEmailList(input.allowedEmails);
+  }
+
+  if (input.allowedOrganizationDomains !== undefined) {
+    updatePayload.allowed_organization_domains = sanitizeDomainList(
+      input.allowedOrganizationDomains,
+    );
+  }
+
   const { data, error } = await supabase
     .from("boards")
-    .update({
-      title: input.title,
-      slug: input.slug || slugify(input.title),
-      description: input.description ?? null,
-      category: input.category ?? null,
-      start_time: input.startTime || null,
-      end_time: input.endTime || null,
-      location_name: input.locationName ?? null,
-      address: input.address ?? null,
-      google_maps_url: input.googleMapsUrl ?? null,
-      latitude: input.latitude ?? null,
-      longitude: input.longitude ?? null,
-      selling_goods: input.sellingGoods ?? false,
-      goods_description: input.goodsDescription ?? null,
-      board_background_theme: input.boardBackgroundTheme ?? "soft_cream",
-      moderation_mode: input.moderationMode ?? "post_first",
-      sharing_scope: input.sharingScope ?? "owner_only",
-      official_website_url: input.officialWebsiteUrl ?? null,
-      official_social_url: input.officialSocialUrl ?? null,
-      organizer_email: input.organizerEmail ?? null,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq("id", boardId)
     .select(BOARD_SELECT)
     .single();
@@ -493,6 +629,12 @@ async function createBoard({
       official_website_url: input.officialWebsiteUrl ?? null,
       official_social_url: input.officialSocialUrl ?? null,
       organizer_email: input.organizerEmail ?? null,
+      official_access_information: input.accessInformation ?? null,
+      official_sharing_scope: input.officialSharingScope ?? "public",
+      posting_permission: input.postingPermission ?? "signed_in_users",
+      allowed_user_ids: sanitizeStringList(input.allowedUserIds),
+      allowed_emails: sanitizeEmailList(input.allowedEmails),
+      allowed_organization_domains: sanitizeDomainList(input.allowedOrganizationDomains),
       star_x: input.starX ?? star.x,
       star_y: input.starY ?? star.y,
       star_size: input.starSize ?? 1,
@@ -523,6 +665,44 @@ function toBoardMutationError(error: unknown) {
   return error instanceof Error
     ? error.message
     : String((error as { message?: string } | null)?.message ?? "Save failed");
+}
+
+function sortGalaxyBoards(boards: Board[]) {
+  return boards.sort((a, b) => {
+    if (a.boardType !== b.boardType) {
+      return a.boardType === "official_event" ? -1 : 1;
+    }
+
+    if (a.boardType === "official_event" && b.boardType === "official_event") {
+      if (a.isVerified !== b.isVerified) {
+        return a.isVerified ? -1 : 1;
+      }
+    }
+
+    const aTime = a.startTime ? Date.parse(a.startTime) : 0;
+    const bTime = b.startTime ? Date.parse(b.startTime) : 0;
+    return aTime - bTime;
+  });
+}
+
+function getEmailDomain(email?: string | null) {
+  return email?.split("@")[1]?.toLowerCase() ?? null;
+}
+
+function sanitizeStringList(values?: string[]) {
+  return Array.from(
+    new Set((values ?? []).map((value) => value.trim()).filter(Boolean)),
+  );
+}
+
+function sanitizeEmailList(values?: string[]) {
+  return sanitizeStringList(values).map((value) => value.toLowerCase());
+}
+
+function sanitizeDomainList(values?: string[]) {
+  return sanitizeStringList(values)
+    .map((value) => value.toLowerCase().replace(/^@/, ""))
+    .filter((value) => value.includes("."));
 }
 
 let hasWarnedAboutMissingSchema = false;
