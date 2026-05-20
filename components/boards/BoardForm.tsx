@@ -2,6 +2,7 @@ import { BoardBackgroundPicker } from "@/components/boards/BoardBackgroundPicker
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
+import { DEFAULT_BOARD_THEME } from "@/lib/board-themes";
 import type { Board } from "@/types/evespace";
 
 export function BoardForm({
@@ -12,7 +13,7 @@ export function BoardForm({
   action: (formData: FormData) => Promise<void>;
 }) {
   return (
-    <Card>
+    <Card className="memory-board-form rounded-[2rem] border-[3px] border-black bg-[#fffaf0]/95 p-5 text-black shadow-[8px_8px_0_rgba(5,5,5,0.14)] backdrop-blur-0 sm:p-7">
       <form action={action} className="grid gap-5">
         {board ? <input name="boardId" type="hidden" value={board.id} /> : null}
         <input name="slug" type="hidden" value={board?.slug ?? ""} />
@@ -29,21 +30,40 @@ export function BoardForm({
           />
         </Field>
 
-        <div className="grid gap-5 md:grid-cols-3">
-          <Field label="Start date/time">
+        <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,0.75fr)_minmax(0,1fr)_minmax(0,0.75fr)]">
+          <Field label="Start date">
             <Input
-              name="startTime"
-              type="datetime-local"
-              defaultValue={toDateTimeLocal(board?.startTime)}
+              name="startDate"
+              type="date"
+              defaultValue={toDateValue(board?.startTime)}
             />
           </Field>
-          <Field label="End date/time">
+          <Field label="Add start time">
             <Input
-              name="endTime"
-              type="datetime-local"
-              defaultValue={toDateTimeLocal(board?.endTime)}
+              name="startTimeOfDay"
+              type="time"
+              defaultValue={toTimeValue(board?.startTime)}
+              placeholder="Optional"
             />
           </Field>
+          <Field label="End date">
+            <Input
+              name="endDate"
+              type="date"
+              defaultValue={toDateValue(board?.endTime)}
+            />
+          </Field>
+          <Field label="Add end time">
+            <Input
+              name="endTimeOfDay"
+              type="time"
+              defaultValue={toTimeValue(board?.endTime)}
+              placeholder="Optional"
+            />
+          </Field>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-2">
           <Field label="location">
             <Input
               name="locationName"
@@ -61,18 +81,29 @@ export function BoardForm({
           </Select>
         </Field>
 
-        <BoardBackgroundPicker defaultValue={board?.boardBackgroundTheme ?? "soft_cream"} />
+        <BoardBackgroundPicker defaultValue={board?.boardBackgroundTheme ?? DEFAULT_BOARD_THEME} />
 
-        <Button type="submit">{board ? "Save" : "Create"}</Button>
+        <Button className="memory-board-cute-button w-full sm:w-auto" type="submit">
+          {board ? "Save" : "Create"}
+        </Button>
       </form>
     </Card>
   );
 }
 
-function toDateTimeLocal(value?: string | null) {
+function toDateValue(value?: string | null) {
   if (!value) {
     return "";
   }
 
-  return value.slice(0, 16);
+  return value.slice(0, 10);
+}
+
+function toTimeValue(value?: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const time = value.slice(11, 16);
+  return time === "00:00" ? "" : time;
 }

@@ -8,11 +8,9 @@ import {
   unblockUserAction,
   unfollowUserAction,
 } from "@/app/actions/follows";
-import { FriendsBoardsFeed } from "@/components/boards/FriendsBoardsFeed";
 import { Card } from "@/components/ui/Card";
 import { Button, LinkButton } from "@/components/ui/Button";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
-import { getFriendBoards } from "@/lib/data/boards";
 import {
   getFollowerProfiles,
   getIncomingFollowRequests,
@@ -28,8 +26,7 @@ export default async function DashboardFriendsPage() {
     redirect("/login");
   }
 
-  const [friendBoards, following, followers, followRequests, blockedProfiles] = await Promise.all([
-    getFriendBoards(profile),
+  const [following, followers, followRequests, blockedProfiles] = await Promise.all([
     getFollowingProfiles(profile.id),
     getFollowerProfiles(profile.id),
     getIncomingFollowRequests(profile.id),
@@ -37,24 +34,19 @@ export default async function DashboardFriendsPage() {
   ]);
 
   return (
-    <main className="cosmic-bg min-h-screen px-4 py-8 sm:px-8">
-      <div className="mx-auto grid max-w-6xl gap-8">
-        <header>
+    <main className="cosmic-bg evespace-page">
+      <div className="evespace-shell max-w-6xl">
+        <header className="evespace-page-header">
           <LinkButton href="/dashboard" variant="ghost">
             Back to Dashboard
           </LinkButton>
-          <p className="mt-8 text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
+          <p className="evespace-kicker mt-6">
             Friends
           </p>
-          <h1 className="mt-3 text-4xl font-semibold text-white">
+          <h1 className="evespace-page-title">
             Following and followers
           </h1>
         </header>
-
-        <section className="grid gap-4">
-          <h2 className="text-2xl font-semibold text-white">Friends&apos; Boards</h2>
-          <FriendsBoardsFeed boards={friendBoards} />
-        </section>
 
         <FollowRequestList requests={followRequests} />
 
@@ -72,7 +64,7 @@ export default async function DashboardFriendsPage() {
 function FollowRequestList({ requests }: { requests: FollowRequest[] }) {
   return (
     <Card>
-      <h2 className="text-xl font-semibold text-white">Follow requests</h2>
+      <h2 className="evespace-card-title">Follow requests</h2>
       <div className="mt-4 grid gap-3">
         {requests.map((request) => {
           const displayName =
@@ -129,7 +121,7 @@ function ProfileList({
 }) {
   return (
     <Card>
-      <h2 className="text-xl font-semibold text-white">{title}</h2>
+      <h2 className="evespace-card-title">{title}</h2>
       <div className="mt-4 grid gap-3">
         {profiles.map((profile) => (
           <div

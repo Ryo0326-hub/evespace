@@ -12,8 +12,8 @@ export function AdminLayout({
   children: ReactNode;
 }) {
   return (
-    <main className="cosmic-bg min-h-screen px-5 py-6 sm:px-8">
-      <div className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[15rem_1fr]">
+    <main className="cosmic-bg evespace-page">
+      <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[15rem_1fr]">
         <aside className="glass-panel h-fit rounded-[2rem] p-4">
           <Link className="block px-3 py-3 font-semibold tracking-[0.28em]" href="/">
             EVESPACE
@@ -39,11 +39,11 @@ export function AdminLayout({
         </aside>
 
         <section>
-          <header className="mb-8">
-            <p className="text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
+          <header className="evespace-page-header mb-8">
+            <p className="evespace-kicker">
               Admin
             </p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white">
+            <h1 className="evespace-page-title">
               {title}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">

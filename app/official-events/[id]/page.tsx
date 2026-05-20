@@ -44,8 +44,8 @@ export default async function OfficialEventDetailPage({
     ]);
 
   return (
-    <main className="cosmic-bg min-h-screen px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
-      <div className="mx-auto grid max-w-6xl gap-6 sm:gap-8">
+    <main className="cosmic-bg evespace-page">
+      <div className="evespace-shell max-w-6xl">
         <nav className="flex items-center justify-start">
           <LinkButton className="w-full sm:w-auto" href="/" variant="ghost">
             Back to Galaxy
@@ -136,7 +136,7 @@ export default async function OfficialEventDetailPage({
 
             {event.accessInformation ? (
               <Card>
-                <h2 className="text-xl font-semibold text-white">Access Information</h2>
+                <h2 className="evespace-card-title">Access Information</h2>
                 <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-300">
                   {event.accessInformation}
                 </p>
@@ -145,7 +145,7 @@ export default async function OfficialEventDetailPage({
 
             {goodsServices.length > 0 ? (
               <Card>
-                <h2 className="text-xl font-semibold text-white">Goods & Services</h2>
+                <h2 className="evespace-card-title">Goods & Services</h2>
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
                   {goodsServices.map((item) => (
                     <div
@@ -190,7 +190,7 @@ export default async function OfficialEventDetailPage({
           </div>
 
           <Card>
-            <h2 className="text-xl font-semibold text-white">Memory Board</h2>
+            <h2 className="evespace-card-title">Memory Board</h2>
             <p className="mt-2 text-sm leading-6 text-slate-400">
               Official event posts can include up to 3 stickers.
             </p>

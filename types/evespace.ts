@@ -35,12 +35,9 @@ export type OfficialEventPostingPermission =
   | "signed_in_users"
   | "approved_users";
 
-export type BoardBackgroundTheme =
-  | "soft_cream"
-  | "pale_blue"
-  | "pale_pink"
-  | "pale_green"
-  | "pale_lavender";
+export type BoardThemeId = "plain" | "camo" | "pastel" | "city";
+
+export type BoardBackgroundTheme = BoardThemeId;
 
 export type FrameStyle =
   | "none"

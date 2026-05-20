@@ -17,17 +17,17 @@ export default async function AdminOfficialEventsPage() {
   const boards = await getManagedOfficialBoards(profile);
 
   return (
-    <main className="cosmic-bg min-h-screen px-4 py-8 sm:px-8">
-      <div className="mx-auto grid max-w-6xl gap-6">
+    <main className="cosmic-bg evespace-page">
+      <div className="evespace-shell max-w-6xl">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+          <div className="evespace-page-header">
             <LinkButton href="/admin" variant="ghost">
               Back to Admin
             </LinkButton>
-            <p className="mt-8 text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
+            <p className="evespace-kicker mt-6">
               Official Events
             </p>
-            <h1 className="mt-3 text-4xl font-semibold text-white">
+            <h1 className="evespace-page-title">
               Manage official event stars
             </h1>
           </div>
@@ -48,7 +48,7 @@ export default async function AdminOfficialEventsPage() {
               >
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <p className="text-xl font-semibold text-white">{board.title}</p>
+                    <p className="evespace-card-title">{board.title}</p>
                     <EventVerificationBadge status={board.verificationStatus} />
                   </div>
                   <p className="mt-2 text-sm text-slate-400">

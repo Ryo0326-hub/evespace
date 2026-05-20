@@ -20,16 +20,16 @@ export default async function AdminVerificationPage() {
   const boards = await getPendingOfficialBoards();
 
   return (
-    <main className="cosmic-bg min-h-screen px-4 py-8 sm:px-8">
-      <div className="mx-auto grid max-w-6xl gap-6">
-        <header>
+    <main className="cosmic-bg evespace-page">
+      <div className="evespace-shell max-w-6xl">
+        <header className="evespace-page-header">
           <LinkButton href="/admin" variant="ghost">
             Back to Admin
           </LinkButton>
-          <p className="mt-8 text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
+          <p className="evespace-kicker mt-6">
             Verification
           </p>
-          <h1 className="mt-3 text-4xl font-semibold text-white">
+          <h1 className="evespace-page-title">
             Pending official events
           </h1>
         </header>
@@ -46,7 +46,7 @@ export default async function AdminVerificationPage() {
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div>
                     <div className="flex flex-wrap items-center gap-3">
-                      <h2 className="text-2xl font-semibold text-white">{board.title}</h2>
+                      <h2 className="evespace-section-title">{board.title}</h2>
                       <EventVerificationBadge status={board.verificationStatus} />
                     </div>
                     <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">

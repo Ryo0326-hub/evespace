@@ -51,10 +51,10 @@ export function OfficialEventHostForm({
     <form action={action} className="grid gap-5">
       <Card className="overflow-hidden border-cyan-100/15 bg-slate-950/70 p-0">
         <div className="border-b border-white/10 bg-cyan-200/[0.04] px-4 py-4 sm:px-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-cyan-100">
+          <p className="evespace-section-kicker">
             Event Signal
           </p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="evespace-section-title mt-2">
             Basic event information
           </h2>
         </div>
@@ -95,10 +95,10 @@ export function OfficialEventHostForm({
 
       <Card className="grid gap-5 border-cyan-100/15 bg-slate-950/55">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-100">
+          <p className="evespace-section-kicker">
             Coordinates
           </p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="evespace-section-title mt-2">
             Location and access
           </h2>
         </div>
@@ -125,10 +125,10 @@ export function OfficialEventHostForm({
       <Card className="grid gap-5 border-cyan-100/15 bg-slate-950/55">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-100">
+            <p className="evespace-section-kicker">
               Timeline
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">Schedule</h2>
+            <h2 className="evespace-section-title mt-2">Schedule</h2>
           </div>
           <Button type="button" variant="secondary" onClick={addScheduleRow}>
             Add schedule item
@@ -189,10 +189,10 @@ export function OfficialEventHostForm({
       <Card className="grid gap-5 border-cyan-100/15 bg-slate-950/55">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-100">
+            <p className="evespace-section-kicker">
               Market Layer
             </p>
-            <h2 className="mt-2 text-2xl font-semibold text-white">
+            <h2 className="evespace-section-title mt-2">
               Goods and services
             </h2>
           </div>
@@ -256,10 +256,10 @@ export function OfficialEventHostForm({
 
       <Card className="grid gap-5 border-cyan-100/15 bg-slate-950/55">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-100">
+          <p className="evespace-section-kicker">
             Memory Board Gate
           </p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">
+          <h2 className="evespace-section-title mt-2">
             Sharing scope
           </h2>
         </div>

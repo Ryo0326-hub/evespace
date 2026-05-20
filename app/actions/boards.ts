@@ -15,6 +15,7 @@ import {
   createFriendBoardCreatedNotifications,
 } from "@/lib/data/notifications";
 import { slugify } from "@/lib/utils";
+import { DEFAULT_BOARD_THEME, toBoardThemeId } from "@/lib/board-themes";
 import type { BoardBackgroundTheme, BoardInput, BoardSharingScope } from "@/types/evespace";
 
 export async function createPrivateBoardAction(formData: FormData) {
@@ -101,8 +102,8 @@ function readPrivateBoardInput(formData: FormData): BoardInput {
     title,
     slug: slugify(String(formData.get("slug") || title)),
     description: clean(formData.get("description")),
-    startTime: clean(formData.get("startTime")),
-    endTime: clean(formData.get("endTime")),
+    startTime: readOptionalDateTime(formData, "start"),
+    endTime: readOptionalDateTime(formData, "end"),
     locationName: clean(formData.get("locationName")),
     boardBackgroundTheme: readBoardBackgroundTheme(formData),
     sharingScope: readSharingScope(formData),
@@ -112,19 +113,19 @@ function readPrivateBoardInput(formData: FormData): BoardInput {
   };
 }
 
-function readBoardBackgroundTheme(formData: FormData): BoardBackgroundTheme {
-  const value = String(formData.get("boardBackgroundTheme") ?? "soft_cream");
+function readOptionalDateTime(formData: FormData, prefix: "start" | "end") {
+  const date = clean(formData.get(`${prefix}Date`));
+  const time = clean(formData.get(`${prefix}TimeOfDay`));
 
-  if (
-    value === "pale_blue" ||
-    value === "pale_pink" ||
-    value === "pale_green" ||
-    value === "pale_lavender"
-  ) {
-    return value;
+  if (!date) {
+    return null;
   }
 
-  return "soft_cream";
+  return time ? `${date}T${time}` : date;
+}
+
+function readBoardBackgroundTheme(formData: FormData): BoardBackgroundTheme {
+  return toBoardThemeId(String(formData.get("boardBackgroundTheme") ?? DEFAULT_BOARD_THEME));
 }
 
 function readSharingScope(formData: FormData): BoardSharingScope {

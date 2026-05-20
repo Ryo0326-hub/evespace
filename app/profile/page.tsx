@@ -13,9 +13,9 @@ export default async function ProfilePage() {
   const events = await getManagedEvents(profile);
 
   return (
-    <main className="cosmic-bg min-h-screen overflow-hidden px-3 py-6 sm:px-8 sm:py-8">
+    <main className="cosmic-bg evespace-page overflow-hidden">
       <div className="mx-auto mb-6 flex w-full max-w-7xl items-center justify-between gap-4">
-        <p className="text-sm font-semibold uppercase tracking-[0.28em] text-cyan-100">
+        <p className="evespace-kicker">
           Your Planet
         </p>
       </div>

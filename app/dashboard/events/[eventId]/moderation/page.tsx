@@ -32,7 +32,7 @@ export default async function DashboardModerationPage({
     return (
       <main className="cosmic-bg flex min-h-screen items-center justify-center px-4">
         <Card className="max-w-lg text-center">
-          <h1 className="text-2xl font-semibold text-white">
+          <h1 className="evespace-section-title">
             You are not an admin for this event.
           </h1>
           <LinkButton className="mt-6" href={`/events/${event.slug}`}>
@@ -46,16 +46,16 @@ export default async function DashboardModerationPage({
   const posts = await getPendingMemoryPosts(event.id);
 
   return (
-    <main className="cosmic-bg min-h-screen px-4 py-8 sm:px-8">
-      <div className="mx-auto max-w-6xl">
+    <main className="cosmic-bg evespace-page">
+      <div className="evespace-shell max-w-6xl">
         <LinkButton href="/dashboard" variant="ghost">
           Back to Dashboard
         </LinkButton>
-        <header className="my-8">
-          <p className="text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
+        <header className="evespace-page-header">
+          <p className="evespace-kicker">
             Moderation
           </p>
-          <h1 className="mt-3 text-4xl font-semibold text-white">{event.title}</h1>
+          <h1 className="evespace-page-title">{event.title}</h1>
         </header>
         <ModerationQueue action={moderatePostAction} posts={posts} />
       </div>

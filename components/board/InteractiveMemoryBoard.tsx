@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MemoryCard } from "@/components/board/MemoryCard";
 import { StickerStorePanel } from "@/components/board/StickerStorePanel";
 import { getStickerOption } from "@/components/board/StickerVisual";
-import { EmptyState } from "@/components/ui/EmptyState";
 import type { MemoryPost, PlacedSticker, StickerId } from "@/types/evespace";
 
 const maxStickersPerPost = 3;
@@ -54,11 +53,13 @@ export function InteractiveMemoryBoard({
   boardId,
   posts,
   returnPath,
+  themeClassName,
   viewerProfileId,
 }: {
   boardId: string;
   posts: MemoryPost[];
   returnPath: string;
+  themeClassName?: string;
   viewerProfileId: string | null;
 }) {
   const firstOwnedPostId = useMemo(() => {
@@ -375,23 +376,28 @@ export function InteractiveMemoryBoard({
     : 0;
 
   return (
-    <section className="relative isolate z-0 touch-pan-y overflow-visible">
+    <section className="relative isolate z-0 min-w-0 max-w-full touch-pan-y overflow-x-clip overflow-y-visible">
       {limitWarning ? (
-        <div className="fixed right-3 top-32 z-[115] max-w-[18rem] rounded-2xl border border-amber-200 bg-amber-100 px-4 py-3 text-xs font-bold text-slate-950 shadow-2xl shadow-black/25 sm:right-6 sm:top-36">
+        <div className="memory-board-warning fixed right-3 top-32 z-[115] max-w-[18rem] rounded-2xl px-4 py-3 text-xs font-black sm:right-6 sm:top-36">
           {limitWarning}
         </div>
       ) : null}
 
-      <div className="memory-grid touch-pan-y pt-4 sm:pt-6">
+      <div className="memory-grid w-full touch-pan-y pt-4 sm:pt-6">
         {posts.length === 0 ? (
-          <EmptyState
-            description="Be the first to leave a star in this event's sky."
-            title="No memories have been posted yet."
-          />
+          <div className="memory-board-empty-state mx-auto w-full max-w-xl rounded-[2rem] p-6 text-center">
+            <p className="text-lg font-black">No memories have been posted yet.</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
+              Be the first to leave a little moment on this board.
+            </p>
+          </div>
         ) : (
           posts.map((post) => (
             <MemoryCard
               key={post.id}
+              canDeletePost={Boolean(
+                viewerProfileId && post.profileId === viewerProfileId,
+              )}
               canEditStickers={Boolean(
                 viewerProfileId && post.profileId === viewerProfileId,
               )}
@@ -416,6 +422,7 @@ export function InteractiveMemoryBoard({
         onStartStickerDrag={startStickerDrag}
         open={storeOpen}
         selectedStickerCount={selectedCountForStore}
+        themeClassName={themeClassName}
       />
     </section>
   );

@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
-import { boardThemes, moderationModes } from "@/lib/constants";
+import { BOARD_THEME_OPTIONS, DEFAULT_BOARD_THEME, getBoardTheme } from "@/lib/board-themes";
+import { moderationModes } from "@/lib/constants";
 import type { Event } from "@/types/evespace";
 
 export function EventForm({
@@ -39,20 +40,40 @@ export function EventForm({
           <Field label="Category">
             <Input name="category" defaultValue={event?.category ?? ""} />
           </Field>
-          <Field label="Start date/time">
-            <Input
-              name="startTime"
-              type="datetime-local"
-              defaultValue={toDateTimeLocal(event?.startTime)}
-            />
-          </Field>
-          <Field label="End date/time">
-            <Input
-              name="endTime"
-              type="datetime-local"
-              defaultValue={toDateTimeLocal(event?.endTime)}
-            />
-          </Field>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="Start date">
+              <Input
+                name="startDate"
+                type="date"
+                defaultValue={toDateValue(event?.startTime)}
+              />
+            </Field>
+            <Field label="Add start time">
+              <Input
+                name="startTimeOfDay"
+                type="time"
+                defaultValue={toTimeValue(event?.startTime)}
+                placeholder="Optional"
+              />
+            </Field>
+          </div>
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Field label="End date">
+              <Input
+                name="endDate"
+                type="date"
+                defaultValue={toDateValue(event?.endTime)}
+              />
+            </Field>
+            <Field label="Add end time">
+              <Input
+                name="endTimeOfDay"
+                type="time"
+                defaultValue={toTimeValue(event?.endTime)}
+                placeholder="Optional"
+              />
+            </Field>
+          </div>
         </div>
 
         <div className="grid gap-5 md:grid-cols-2">
@@ -109,11 +130,11 @@ export function EventForm({
           <Field label="Board background theme">
             <Select
               name="boardBackgroundTheme"
-              defaultValue={event?.boardBackgroundTheme ?? "soft_cream"}
+              defaultValue={event?.boardBackgroundTheme ?? DEFAULT_BOARD_THEME}
             >
-              {boardThemes.map((theme) => (
+              {BOARD_THEME_OPTIONS.map((theme) => (
                 <option key={theme} value={theme}>
-                  {theme.replace("_", " ")}
+                  {getBoardTheme(theme).label}
                 </option>
               ))}
             </Select>
@@ -174,10 +195,19 @@ export function EventForm({
   );
 }
 
-function toDateTimeLocal(value?: string | null) {
+function toDateValue(value?: string | null) {
   if (!value) {
     return "";
   }
 
-  return value.slice(0, 16);
+  return value.slice(0, 10);
+}
+
+function toTimeValue(value?: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const time = value.slice(11, 16);
+  return time === "00:00" ? "" : time;
 }

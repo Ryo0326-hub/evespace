@@ -8,6 +8,7 @@ export function MemoryBoard({
   posts,
   previousPageHref,
   returnPath,
+  themeClassName,
   viewerProfileId = null,
 }: {
   boardId: string;
@@ -15,6 +16,7 @@ export function MemoryBoard({
   posts: MemoryPost[];
   previousPageHref?: string | null;
   returnPath: string;
+  themeClassName?: string;
   viewerProfileId?: string | null;
 }) {
   /**
@@ -28,20 +30,21 @@ export function MemoryBoard({
   ].join("|");
 
   return (
-    <div className="grid gap-6">
+    <div className="grid min-w-0 max-w-full gap-6 overflow-x-clip">
       <InteractiveMemoryBoard
         key={interactiveKey}
         boardId={boardId}
         posts={posts}
         returnPath={returnPath}
+        themeClassName={themeClassName}
         viewerProfileId={viewerProfileId}
       />
 
       {previousPageHref || nextPageHref ? (
-        <nav className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+        <nav className="flex min-w-0 flex-col gap-3 sm:flex-row sm:justify-center">
           {previousPageHref ? (
             <LinkButton
-              className="border-cyan-300/70 bg-slate-950 text-cyan-50 shadow-[0_0_18px_rgba(8,145,178,0.18)] hover:border-cyan-100 hover:bg-slate-900 hover:text-white"
+              className="memory-board-cute-button font-black"
               href={previousPageHref}
               variant="secondary"
             >
@@ -50,7 +53,7 @@ export function MemoryBoard({
           ) : null}
           {nextPageHref ? (
             <LinkButton
-              className="border-cyan-300/70 bg-slate-950 text-cyan-50 shadow-[0_0_18px_rgba(8,145,178,0.18)] hover:border-cyan-100 hover:bg-slate-900 hover:text-white"
+              className="memory-board-cute-button font-black"
               href={nextPageHref}
               variant="secondary"
             >

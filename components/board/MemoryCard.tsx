@@ -1,7 +1,9 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
+import { deleteOwnMemoryPostAction } from "@/app/actions/memories";
 import { DraggableSticker } from "@/components/board/DraggableSticker";
 import { MemoryComments } from "@/components/board/MemoryComments";
 import { StickerVisual } from "@/components/board/StickerVisual";
@@ -20,6 +22,7 @@ export function MemoryCard({
   stickers = [],
   selected = false,
   canEditStickers = false,
+  canDeletePost = false,
   onSelect,
   onStickerMove,
   onStickerDelete,
@@ -30,6 +33,7 @@ export function MemoryCard({
   stickers?: PlacedSticker[];
   selected?: boolean;
   canEditStickers?: boolean;
+  canDeletePost?: boolean;
   onSelect?: (postId: string) => void;
   onStickerMove?: (stickerId: string, x: number, y: number) => void;
   onStickerDelete?: (stickerId: string) => void;
@@ -37,56 +41,104 @@ export function MemoryCard({
   viewerSignedIn?: boolean;
 }) {
   const stickerLayerRef = useRef<HTMLDivElement | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const deleteAction = deleteOwnMemoryPostAction.bind(null, post.id, returnPath);
 
   return (
-    <article className="mx-auto w-full max-w-[26rem] break-inside-avoid">
+    <article className="mx-auto w-full min-w-0 max-w-[25.5rem] break-inside-avoid">
       <div
         data-memory-card-id={post.id}
         onClick={() => onSelect?.(post.id)}
         className={cn(
-          "relative overflow-hidden rounded-2xl border-2 border-black bg-white p-3 text-black shadow-sm transition sm:p-4",
-          selected ? "ring-2 ring-cyan-200/80 ring-offset-2 ring-offset-white" : "",
+          "relative min-w-0 max-w-full overflow-hidden rounded-[1.7rem] border-[3px] border-black bg-[#fffaf0] p-3 text-black shadow-[7px_7px_0_rgba(5,5,5,0.13)] transition sm:p-4",
+          selected ? "ring-4 ring-pink-200/85 ring-offset-2 ring-offset-[#fffaf0]" : "",
         )}
       >
-        <div
-          ref={stickerLayerRef}
-          className="pointer-events-none absolute inset-[3px] z-30 overflow-hidden rounded-[calc(1rem-3px)]"
-          data-sticker-layer-for={post.id}
-        >
-          {stickers.map((sticker) => (
-            <div
-              className={canEditStickers ? "pointer-events-auto" : "pointer-events-none"}
-              key={sticker.id}
-            >
-              <DraggableSticker
-                containerRef={stickerLayerRef}
-                onDelete={canEditStickers ? onStickerDelete : undefined}
-                onMove={canEditStickers ? onStickerMove : undefined}
-                sticker={sticker}
-              />
-            </div>
-          ))}
-        </div>
-
-        <header className="relative z-10 flex min-h-12 items-center justify-between gap-3 px-1 pb-3">
+        <header className="relative z-10 flex min-h-12 items-center justify-between gap-3 border-b-2 border-dashed border-black/15 px-1 pb-3">
           <div className="min-w-0">
-            <p className="truncate text-xs font-semibold uppercase tracking-[0.2em] text-slate-700">
+            <p className="truncate text-xs font-black uppercase tracking-[0.2em] text-slate-700">
               {post.authorDisplayName || "Anonymous"}
             </p>
-            <time className="text-xs text-slate-500">{formatDate(post.createdAt)}</time>
+            <time className="text-xs font-semibold text-slate-500">
+              {formatDate(post.createdAt)}
+            </time>
           </div>
+          {canDeletePost ? (
+            <button
+              aria-label="Delete memory"
+              className="memory-board-danger-button inline-flex size-8 shrink-0 items-center justify-center rounded-full text-base font-black leading-none transition"
+              onClick={(event) => {
+                event.stopPropagation();
+                setConfirmDeleteOpen(true);
+              }}
+              type="button"
+            >
+              x
+            </button>
+          ) : null}
         </header>
 
-        <div className="relative z-10 overflow-hidden rounded-xl border border-black bg-white">
+        {confirmDeleteOpen ? (
+          <div
+            className="absolute inset-0 z-50 grid place-items-center bg-black/55 px-4 backdrop-blur-sm"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Confirm memory deletion"
+          >
+            <div className="memory-board-confirm-dialog w-full max-w-[18rem] rounded-[1.5rem] border-[3px] p-4 text-center">
+              <p className="text-sm font-black">Delete this memory?</p>
+              <p className="mt-2 text-xs font-semibold leading-5 text-slate-700">
+                This removes the post from the board.
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  className="memory-board-soft-button inline-flex min-h-10 items-center justify-center rounded-full px-4 text-xs font-black transition"
+                  onClick={() => setConfirmDeleteOpen(false)}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <form action={deleteAction}>
+                  <DeleteSubmitButton />
+                </form>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="relative z-10 mt-3 overflow-hidden rounded-[1.15rem] border-2 border-black bg-white shadow-[3px_3px_0_rgba(5,5,5,0.12)]">
           <img
             src={post.imageUrl}
             alt={post.caption ?? "Event memory"}
             className="aspect-[4/3] w-full object-cover"
             loading="lazy"
           />
+          <div
+            ref={stickerLayerRef}
+            className="pointer-events-none absolute inset-0 z-20 overflow-hidden"
+            data-sticker-layer-for={post.id}
+          >
+            {stickers.map((sticker) => (
+              <div
+                className={canEditStickers ? "pointer-events-auto" : "pointer-events-none"}
+                key={sticker.id}
+              >
+                <DraggableSticker
+                  containerRef={stickerLayerRef}
+                  onDelete={canEditStickers ? onStickerDelete : undefined}
+                  onMove={canEditStickers ? onStickerMove : undefined}
+                  sticker={sticker}
+                />
+              </div>
+            ))}
+          </div>
           {post.stickers.map((sticker) => (
             <div
-              className={cn("pointer-events-none absolute", placementClass[sticker.placement])}
+              className={cn(
+                "pointer-events-none absolute z-30",
+                placementClass[sticker.placement],
+              )}
               key={`${sticker.stickerId}-${sticker.placement}`}
             >
               <StickerVisual size={62} stickerId={sticker.stickerId} />
@@ -96,7 +148,7 @@ export function MemoryCard({
 
         <div className="relative z-10 px-1 pb-2 pt-4">
           {post.caption ? (
-            <p className="text-sm leading-6 text-black">
+            <p className="min-w-0 whitespace-pre-wrap break-words text-sm font-semibold leading-6 text-black [overflow-wrap:anywhere]">
               {post.caption}
             </p>
           ) : null}
@@ -113,5 +165,19 @@ export function MemoryCard({
         ) : null}
       </div>
     </article>
+  );
+}
+
+function DeleteSubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      className="memory-board-danger-button inline-flex min-h-10 w-full items-center justify-center rounded-full px-4 text-xs font-black transition disabled:cursor-wait disabled:opacity-70"
+      disabled={pending}
+      type="submit"
+    >
+      {pending ? "Deleting..." : "Confirm"}
+    </button>
   );
 }

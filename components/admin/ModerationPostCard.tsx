@@ -17,7 +17,7 @@ export function ModerationPostCard({
         <p className="text-sm uppercase tracking-[0.25em] text-slate-400">
           {post.status}
         </p>
-        <h3 className="mt-2 text-xl font-semibold text-white">
+        <h3 className="evespace-card-title mt-2">
           {post.authorDisplayName || "Anonymous"}
         </h3>
         <p className="mt-3 text-sm leading-6 text-slate-300">

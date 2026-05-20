@@ -4,8 +4,7 @@ import { FollowButton } from "@/components/social/FollowButton";
 import { MemoryBoard } from "@/components/board/MemoryBoard";
 import { StickerStoreButton } from "@/components/board/StickerStoreButton";
 import { LinkButton } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { boardBackgrounds } from "@/lib/constants";
+import { DEFAULT_BOARD_THEME, getBoardTheme } from "@/lib/board-themes";
 import { sharingScopeLabel } from "@/lib/boards/labels";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
 import {
@@ -20,7 +19,7 @@ import { getFollowRelationshipStatus } from "@/lib/data/follows";
 import { cn, compactDateLocation } from "@/lib/utils";
 
 const postMemoryActionClassName =
-  "w-full border-cyan-300/70 !bg-slate-950 !text-cyan-50 shadow-[0_0_24px_rgba(8,145,178,0.28)] hover:border-cyan-100 hover:!bg-slate-900 hover:!text-white sm:w-auto";
+  "memory-board-cute-button w-full rounded-full px-5 py-2.5 text-sm font-black sm:w-auto";
 
 export default async function PrivateBoardPage({
   params,
@@ -48,16 +47,23 @@ export default async function PrivateBoardPage({
       : Promise.resolve<"none">("none"),
   ]);
 
-  const background = boardBackgrounds[board.boardBackgroundTheme];
+  const viewerOwnsBoard = Boolean(profile?.id && board.ownerProfileId === profile.id);
+  const background = getBoardTheme(
+    viewerOwnsBoard ? board.boardBackgroundTheme : DEFAULT_BOARD_THEME,
+  );
 
   return (
-    <main className={`${background.className} min-h-dvh overflow-visible px-3 pb-24 pt-4 text-slate-950 sm:px-6 sm:py-6 lg:px-8`}>
-      <div className="mx-auto max-w-7xl">
-        <nav className="grid grid-cols-1 gap-3 sm:flex sm:items-center sm:justify-between">
-          <LinkButton className="w-full sm:w-auto" href="/dashboard" variant="secondary">
+    <main className={`${background.pageClassName} min-h-dvh overflow-x-clip overflow-y-visible px-3 pb-24 pt-4 text-slate-950 sm:px-6 sm:py-6 lg:px-8`}>
+      <div className="mx-auto min-w-0 max-w-7xl">
+        <nav className="grid min-w-0 grid-cols-1 gap-3 sm:flex sm:items-center sm:justify-between">
+          <LinkButton
+            className="memory-board-soft-button w-full sm:w-auto"
+            href="/dashboard"
+            variant="secondary"
+          >
             Back to Dashboard
           </LinkButton>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex min-w-0 flex-wrap gap-2">
             {canPost ? (
               <LinkButton
                 className={postMemoryActionClassName}
@@ -72,7 +78,7 @@ export default async function PrivateBoardPage({
             ) : null}
             {canManage ? (
               <LinkButton
-                className="w-full sm:w-auto"
+                className="memory-board-soft-button w-full sm:w-auto"
                 href={`/boards/${board.id}/edit`}
                 variant="secondary"
               >
@@ -82,32 +88,38 @@ export default async function PrivateBoardPage({
           </div>
         </nav>
 
-        <header className="my-7 grid gap-4 rounded-[2rem] border-2 border-black bg-white p-5 shadow-sm sm:my-10 sm:p-8">
+        <header className="memory-board-title-card my-7 grid gap-4 rounded-[2rem] p-5 sm:my-10 sm:p-8">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-slate-500">
+            <p className="text-xs font-black uppercase tracking-[0.28em] text-slate-600">
               {sharingScopeLabel(board.sharingScope)}
             </p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-black sm:text-6xl">
-              {board.title}
+            <h1 className="mt-3 text-4xl font-black tracking-normal text-black sm:text-6xl">
+              <span className="memory-board-title-mark">{board.title}</span>
             </h1>
-            <p className="mt-3 text-sm text-slate-600">
+            <p className="mt-4 text-sm font-bold text-slate-700">
               {compactDateLocation(board.startTime, board.locationName)}
             </p>
             {board.description ? (
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-700">
+              <p className="mt-4 max-w-2xl text-sm font-medium leading-7 text-slate-700">
                 {board.description}
               </p>
             ) : null}
           </div>
           {profile && board.ownerProfileId && board.ownerProfileId !== profile.id ? (
-            <div className="flex items-center gap-3">
-              <p className="text-sm text-slate-600">
-                Shared by {board.ownerDisplayName ?? "an Evespace user"}
-              </p>
-                <FollowButton
+            <div className="memory-board-owner-panel mt-1 grid min-w-0 gap-3 rounded-2xl border-2 p-3 sm:flex sm:w-fit sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-[0.68rem] font-black uppercase tracking-[0.18em] text-slate-600">
+                  Shared by
+                </p>
+                <p className="mt-0.5 min-w-0 text-sm font-black text-slate-800">
+                  {board.ownerDisplayName ?? "an Evespace user"}
+                </p>
+              </div>
+              <FollowButton
                 followingProfileId={board.ownerProfileId}
                 returnPath={`/boards/${board.id}`}
                 status={followStatus}
+                tone="board"
               />
             </div>
           ) : null}
@@ -116,7 +128,7 @@ export default async function PrivateBoardPage({
         <div
           className={cn(
             "-mx-3 px-3 sticky top-14 z-[56] mb-4 mt-6 shrink-0 border-b border-black/15 py-3 shadow-sm backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
-            background.className,
+            background.navClassName,
           )}
           id="memory-board-actions"
         >
@@ -125,7 +137,12 @@ export default async function PrivateBoardPage({
           </div>
         </div>
 
-        <Card className="overflow-visible border-black/10 bg-white/60 text-slate-950 shadow-sm">
+        <div
+          className={cn(
+            "overflow-x-clip overflow-y-visible rounded-[1.5rem] text-slate-950",
+            background.boardClassName,
+          )}
+        >
           <MemoryBoard
             boardId={board.id}
             nextPageHref={
@@ -142,9 +159,10 @@ export default async function PrivateBoardPage({
                   : `/boards/${board.id}?offset=${postPage.previousOffset}`
             }
             returnPath={`/boards/${board.id}`}
+            themeClassName={background.boardClassName}
             viewerProfileId={profile?.id ?? null}
           />
-        </Card>
+        </div>
       </div>
     </main>
   );

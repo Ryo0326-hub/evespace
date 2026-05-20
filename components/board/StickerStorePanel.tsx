@@ -19,6 +19,7 @@ export function StickerStorePanel({
   onStartStickerDrag,
   selectedStickerCount,
   maxStickersPerPost,
+  themeClassName,
   hint,
 }: {
   open: boolean;
@@ -30,6 +31,7 @@ export function StickerStorePanel({
   ) => void;
   selectedStickerCount: number;
   maxStickersPerPost: number;
+  themeClassName?: string;
   hint?: string;
 }) {
   const [categoryId, setCategoryId] = useState<StickerCategory>("pixel");
@@ -138,18 +140,19 @@ export function StickerStorePanel({
       className={cn(
         "fixed z-[110] w-[min(20rem,calc(100vw-1.5rem))] sm:w-80",
         "right-3 top-[9rem] sm:right-6 sm:top-[9.25rem]",
+        themeClassName,
       )}
       ref={panelRef}
       style={{
         transform: `translate3d(${panelOffset.x}px, ${panelOffset.y}px, 0)`,
       }}
     >
-      <section className="flex flex-col max-h-[35vh] overflow-hidden rounded-[1.35rem] border border-black/10 bg-white/95 shadow-[0_18px_54px_rgba(0,0,0,0.26)] backdrop-blur-xl sm:max-h-[28rem] sm:rounded-[1.5rem]">
-        <header className="shrink-0 grid gap-3 border-b border-black/10 px-3 py-3">
+      <section className="memory-board-sticker-store flex max-h-[35vh] flex-col overflow-hidden rounded-[1.35rem] backdrop-blur-xl sm:max-h-[28rem] sm:rounded-[1.5rem]">
+        <header className="grid shrink-0 gap-3 border-b-2 border-dashed border-black/15 px-3 py-3">
           <div className="flex items-start justify-between gap-3">
             <div
               aria-label="Drag sticker store"
-              className="min-w-0 flex-1 touch-none cursor-grab rounded-2xl border border-black/10 bg-black/[0.03] px-3 py-2 active:cursor-grabbing"
+              className="min-w-0 flex-1 touch-none cursor-grab rounded-2xl border-2 border-black/15 bg-[#f4e9ff] px-3 py-2 active:cursor-grabbing"
               onPointerDown={startPanelDrag}
               role="button"
               tabIndex={0}
@@ -174,7 +177,7 @@ export function StickerStorePanel({
               </p>
             </div>
             <button
-              className="shrink-0 rounded-full border border-black/20 bg-black px-3 py-1.5 text-[0.68rem] font-black text-white"
+              className="shrink-0 rounded-full border-2 border-black bg-[#ffdbe8] px-3 py-1.5 text-[0.68rem] font-black text-black shadow-[2px_2px_0_rgba(5,5,5,0.14)]"
               onClick={onClose}
               type="button"
             >
@@ -184,7 +187,7 @@ export function StickerStorePanel({
         </header>
 
         {hint ? (
-          <p className="border-b border-black/10 px-3 py-2 text-[0.7rem] font-semibold leading-snug text-slate-800">
+          <p className="border-b-2 border-dashed border-black/15 px-3 py-2 text-[0.7rem] font-bold leading-snug text-slate-800">
             {hint}
           </p>
         ) : null}
@@ -195,7 +198,7 @@ export function StickerStorePanel({
               Search
             </span>
             <input
-              className="min-h-9 rounded-xl border border-black/20 bg-white px-3 text-sm font-semibold text-slate-950 outline-none placeholder:text-slate-500 focus:border-black"
+              className="min-h-9 rounded-xl border-2 border-black/20 bg-white px-3 text-sm font-semibold text-slate-950 outline-none placeholder:text-slate-500 focus:border-black"
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search stickers"
               type="search"
@@ -209,7 +212,7 @@ export function StickerStorePanel({
                 className={cn(
                   "shrink-0 rounded-full border px-3 py-1.5 text-[0.68rem] font-semibold transition",
                   category.id === categoryId
-                    ? "border-black bg-black text-white"
+                    ? "border-black bg-[#fff4a8] text-black shadow-[2px_2px_0_rgba(5,5,5,0.14)]"
                     : "border-black/20 bg-white text-black",
                 )}
                 key={category.id}
@@ -224,7 +227,7 @@ export function StickerStorePanel({
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
             {visibleStickers.map((sticker) => (
               <button
-                className="touch-none rounded-[1rem] p-2 text-center transition hover:bg-black/5"
+                className="touch-none rounded-[1rem] border border-transparent p-2 text-center transition hover:border-black/10 hover:bg-white/75"
                 key={sticker.id}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {

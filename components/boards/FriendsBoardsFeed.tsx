@@ -15,7 +15,12 @@ export function FriendsBoardsFeed({ boards }: { boards: Board[] }) {
   return (
     <div className="grid gap-4">
       {boards.map((board) => (
-        <DashboardBoardCard board={board} key={board.id} />
+        <DashboardBoardCard
+          board={board}
+          canEdit={false}
+          key={board.id}
+          themeOverride="plain"
+        />
       ))}
     </div>
   );

@@ -12,16 +12,16 @@ export default async function NewOfficialEventPage() {
   }
 
   return (
-    <main className="cosmic-bg min-h-screen px-4 py-8 sm:px-8">
-      <div className="mx-auto max-w-5xl">
+    <main className="cosmic-bg evespace-page">
+      <div className="evespace-shell max-w-5xl">
         <LinkButton href="/admin/official-events" variant="ghost">
           Back to Official Events
         </LinkButton>
-        <header className="my-8">
-          <p className="text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
+        <header className="evespace-page-header">
+          <p className="evespace-kicker">
             Official Event
           </p>
-          <h1 className="mt-3 text-4xl font-semibold text-white">
+          <h1 className="evespace-page-title">
             Create official event star
           </h1>
         </header>

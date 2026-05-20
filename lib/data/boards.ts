@@ -1,6 +1,7 @@
 import { mapBoard } from "@/lib/data/mappers";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { DEFAULT_BOARD_THEME } from "@/lib/board-themes";
 import { generateStarCoordinate, slugify } from "@/lib/utils";
 import type {
   Board,
@@ -509,7 +510,7 @@ export async function updateBoard(boardId: string, input: BoardInput) {
     longitude: input.longitude ?? null,
     selling_goods: input.sellingGoods ?? false,
     goods_description: input.goodsDescription ?? null,
-    board_background_theme: input.boardBackgroundTheme ?? "soft_cream",
+    board_background_theme: input.boardBackgroundTheme ?? DEFAULT_BOARD_THEME,
     moderation_mode: input.moderationMode ?? "post_first",
     sharing_scope: input.sharingScope ?? "owner_only",
     official_website_url: input.officialWebsiteUrl ?? null,
@@ -621,7 +622,7 @@ async function createBoard({
       longitude: input.longitude ?? null,
       selling_goods: input.sellingGoods ?? false,
       goods_description: input.goodsDescription ?? null,
-      board_background_theme: input.boardBackgroundTheme ?? "soft_cream",
+      board_background_theme: input.boardBackgroundTheme ?? DEFAULT_BOARD_THEME,
       moderation_mode: moderationMode,
       verification_status: verificationStatus,
       verification_requested_at:

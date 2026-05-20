@@ -18,8 +18,8 @@ export default async function NewHostedOfficialEventPage({
   const error = (await searchParams)?.error;
 
   return (
-    <main className="cosmic-bg min-h-screen overflow-x-hidden px-3 py-5 sm:px-8 sm:py-8">
-      <div className="mx-auto grid w-full max-w-6xl gap-6">
+    <main className="cosmic-bg evespace-page">
+      <div className="evespace-shell max-w-6xl">
         <nav>
           <LinkButton href="/dashboard" variant="ghost">
             Back to Dashboard
@@ -29,10 +29,10 @@ export default async function NewHostedOfficialEventPage({
         <header className="relative overflow-hidden rounded-[2rem] border border-cyan-100/15 bg-slate-950/70 px-5 py-8 shadow-2xl shadow-cyan-950/20 sm:px-8 sm:py-10">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(103,232,249,0.18),transparent_32%),radial-gradient(circle_at_82%_0%,rgba(168,85,247,0.14),transparent_30%)]" />
           <div className="relative max-w-3xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.34em] text-cyan-100">
+            <p className="evespace-kicker">
               Host an official event
             </p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-6xl">
+            <h1 className="evespace-page-title mt-4">
               Broadcast an event star.
             </h1>
             <p className="mt-5 text-sm leading-7 text-slate-300 sm:text-base">

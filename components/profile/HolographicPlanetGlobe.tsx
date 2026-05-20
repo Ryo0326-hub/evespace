@@ -16,6 +16,11 @@ type TooltipState = PlanetGlobeSignal & {
   y: number;
 };
 
+type MobileSignalLabel = Pick<PlanetGlobeSignal, "id" | "title"> & {
+  x: number;
+  y: number;
+};
+
 const GLOBE_RADIUS = 1.72;
 const GLOBE_Y = 0.34;
 const BASE_Y = -2.08;
@@ -30,6 +35,7 @@ export function HolographicPlanetGlobe({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const router = useRouter();
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [mobileLabels, setMobileLabels] = useState<MobileSignalLabel[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -157,6 +163,10 @@ export function HolographicPlanetGlobe({
     const globeCenter = new THREE.Vector3();
     const markerNormal = new THREE.Vector3();
     const cameraDirection = new THREE.Vector3();
+    const labelWorldPosition = new THREE.Vector3();
+    const labelScreenPosition = new THREE.Vector3();
+    const mobileLabelSnapshot = { current: "" };
+    const mobileFrame = { current: 0 };
     const drag = {
       active: false,
       lastX: 0,
@@ -184,6 +194,62 @@ export function HolographicPlanetGlobe({
       markerNormal.subVectors(hoverWorldPosition, globeCenter).normalize();
       cameraDirection.subVectors(camera.position, hoverWorldPosition).normalize();
       return markerNormal.dot(cameraDirection) > 0.08;
+    }
+
+    function updateMobileLabels() {
+      mobileFrame.current += 1;
+
+      if (mobileFrame.current % 3 !== 0) {
+        return;
+      }
+
+      const width = canvasElement.clientWidth;
+      const height = canvasElement.clientHeight;
+
+      if (width >= 640 || signals.length === 0) {
+        if (mobileLabelSnapshot.current !== "[]") {
+          mobileLabelSnapshot.current = "[]";
+          setMobileLabels([]);
+        }
+        return;
+      }
+
+      const nextLabels = markers
+        .flatMap((marker) => {
+          if (!markerIsFacingCamera(marker)) {
+            return [];
+          }
+
+          const signal = marker.userData.signal as PlanetGlobeSignal;
+          marker.getWorldPosition(labelWorldPosition);
+          labelScreenPosition.copy(labelWorldPosition).project(camera);
+
+          const x = (labelScreenPosition.x * 0.5 + 0.5) * width;
+          const y = (-labelScreenPosition.y * 0.5 + 0.5) * height;
+
+          if (x < 16 || x > width - 16 || y < 36 || y > height - 24) {
+            return [];
+          }
+
+          return [
+            {
+              id: signal.id,
+              title: signal.title,
+              x: Math.round(clamp(x, 54, width - 54)),
+              y: Math.round(clamp(y - 18, 54, height - 36)),
+            },
+          ];
+        })
+        .slice(0, 8);
+
+      const snapshot = nextLabels
+        .map((label) => `${label.id}:${label.x}:${label.y}:${label.title}`)
+        .join("|");
+
+      if (snapshot !== mobileLabelSnapshot.current) {
+        mobileLabelSnapshot.current = snapshot;
+        setMobileLabels(nextLabels);
+      }
     }
 
     function setPointerFromEvent(event: PointerEvent) {
@@ -359,6 +425,7 @@ export function HolographicPlanetGlobe({
       halo.material.opacity = prefersReducedMotion
         ? 0.78
         : 0.78 + Math.sin(Date.now() * 0.0014) * 0.08;
+      updateMobileLabels();
       renderer.render(scene, camera);
       frame = requestAnimationFrame(animate);
     }
@@ -405,6 +472,16 @@ export function HolographicPlanetGlobe({
         style={{ touchAction: "pan-y" }}
       />
       <div className="planet-scanline pointer-events-none absolute inset-0 opacity-35 mix-blend-screen" />
+
+      {mobileLabels.map((label) => (
+        <div
+          className="pointer-events-none absolute z-20 max-w-[7.25rem] -translate-x-1/2 -translate-y-full truncate rounded-full border border-cyan-100/35 bg-slate-950/82 px-2.5 py-1 text-[0.62rem] font-black leading-none text-cyan-50 shadow-[0_0_20px_rgba(34,211,238,0.28)] backdrop-blur-md sm:hidden"
+          key={label.id}
+          style={{ left: label.x, top: label.y }}
+        >
+          {label.title}
+        </div>
+      ))}
 
       {tooltip ? (
         <div

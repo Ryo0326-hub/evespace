@@ -18,8 +18,8 @@ export function EventDetail({
   memoryPreview: MemoryPost[];
 }) {
   return (
-    <main className="cosmic-bg min-h-screen px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
-      <div className="mx-auto grid max-w-6xl gap-6 sm:gap-8">
+    <main className="cosmic-bg evespace-page">
+      <div className="evespace-shell max-w-6xl">
         <nav className="flex items-center justify-start">
           <LinkButton className="w-full sm:w-auto" href="/" variant="ghost">
             Back to Galaxy
@@ -106,7 +106,7 @@ export function EventDetail({
           <div className="grid gap-6">
             <EventScheduleList schedules={schedules} />
             <Card>
-              <h2 className="text-xl font-semibold text-white">Goods</h2>
+              <h2 className="evespace-card-title">Goods</h2>
               <p className="mt-4 text-sm leading-6 text-slate-300">
                 {event.sellingGoods
                   ? event.goodsDescription ||
@@ -119,7 +119,7 @@ export function EventDetail({
           <Card>
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl font-semibold text-white">Recent Memories</h2>
+                <h2 className="evespace-card-title">Recent Memories</h2>
                 <p className="mt-1 text-sm text-slate-400">
                   Approved notes from this event board.
                 </p>

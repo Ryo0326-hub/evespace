@@ -16,7 +16,7 @@ const variants: Record<ButtonVariant, string> = {
 };
 
 const baseClass =
-  "inline-flex min-h-11 items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-cyan-200/70 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex min-h-11 min-w-0 max-w-full items-center justify-center rounded-full border px-5 py-2.5 text-center text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-cyan-200/70 disabled:cursor-not-allowed disabled:opacity-60";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;

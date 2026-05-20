@@ -11,17 +11,19 @@ export default async function AdminPage() {
   }
 
   return (
-    <main className="cosmic-bg min-h-screen px-4 py-8 sm:px-8">
-      <div className="mx-auto max-w-5xl">
-        <p className="text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
-          Evespace Admin
-        </p>
-        <h1 className="mt-3 text-4xl font-semibold text-white">
-          Platform controls
-        </h1>
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
+    <main className="cosmic-bg evespace-page">
+      <div className="evespace-shell max-w-5xl">
+        <header className="evespace-page-header">
+          <p className="evespace-kicker">
+            Evespace Admin
+          </p>
+          <h1 className="evespace-page-title">
+            Platform controls
+          </h1>
+        </header>
+        <div className="grid gap-4 md:grid-cols-2">
           <Card>
-            <h2 className="text-xl font-semibold text-white">Official Events</h2>
+            <h2 className="evespace-card-title">Official Events</h2>
             <p className="mt-3 text-sm leading-6 text-slate-300">
               Create, edit, and review verified public event stars.
             </p>
@@ -30,7 +32,7 @@ export default async function AdminPage() {
             </LinkButton>
           </Card>
           <Card>
-            <h2 className="text-xl font-semibold text-white">Verification</h2>
+            <h2 className="evespace-card-title">Verification</h2>
             <p className="mt-3 text-sm leading-6 text-slate-300">
               Approve or reject official event verification requests.
             </p>

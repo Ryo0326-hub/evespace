@@ -6,6 +6,7 @@ import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
 import { createOfficialBoard } from "@/lib/data/boards";
 import { replaceOfficialEventGoodsServices } from "@/lib/data/official-event-goods";
 import { upsertScheduleItems } from "@/lib/data/schedules";
+import { DEFAULT_BOARD_THEME } from "@/lib/board-themes";
 import { slugify } from "@/lib/utils";
 import type {
   BoardBackgroundTheme,
@@ -272,7 +273,7 @@ function readPostingPermission(formData: FormData): OfficialEventPostingPermissi
 }
 
 function readBoardTheme(): BoardBackgroundTheme {
-  return "pale_blue";
+  return DEFAULT_BOARD_THEME;
 }
 
 function readLines(value: FormDataEntryValue | null) {

@@ -2,6 +2,7 @@
 
 import { useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
 import {
   createMemoryCommentAction,
   type CreateMemoryCommentState,
@@ -40,7 +41,7 @@ function CommentSubmitButton({
 
   return (
     <button
-      className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-full border border-black bg-black px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+      className="memory-board-cute-button inline-flex min-h-9 w-full shrink-0 items-center justify-center rounded-full px-4 py-2 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-50 min-[380px]:w-auto"
       disabled={pending}
       type="submit"
     >
@@ -77,15 +78,15 @@ export function MemoryComments({
   }, []);
 
   return (
-    <section className="relative z-10 mt-2 border-t border-black/10 px-1 pt-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-slate-600">
+    <section className="memory-board-comments relative z-10 mt-2 min-w-0 max-w-full overflow-hidden border-t-2 border-dashed px-1 pt-3">
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <h2 className="min-w-0 text-xs font-black uppercase tracking-[0.18em] text-slate-600">
           Comments
         </h2>
         <button
           aria-controls={commentsRegionId}
           aria-expanded={expanded}
-          className="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-bold text-slate-700 transition hover:border-black/25 hover:text-black"
+          className="memory-board-soft-button max-w-[70%] shrink-0 rounded-full px-3 py-1 text-xs font-black transition"
           onClick={() => setExpanded((current) => !current)}
           type="button"
         >
@@ -100,10 +101,10 @@ export function MemoryComments({
       </div>
 
       {!expanded && previewThread ? (
-        <div className="mt-3">
+        <div className="mt-3 min-w-0 max-w-full">
           <CommentBubble comment={previewThread.comment} />
           {previewThread.replies.length > 0 ? (
-            <p className="mt-1 pl-3 text-xs font-semibold text-slate-500">
+            <p className="mt-1 min-w-0 pl-3 text-xs font-semibold text-slate-500">
               {previewThread.replies.length}{" "}
               {previewThread.replies.length === 1 ? "reply" : "replies"} hidden
             </p>
@@ -112,14 +113,17 @@ export function MemoryComments({
       ) : null}
 
       {!expanded && totalComments === 0 ? (
-        <p className="mt-3 text-sm text-slate-500">
+        <p className="mt-3 text-sm font-semibold text-slate-500">
           No comments yet.
         </p>
       ) : null}
 
-      <div className={expanded ? "mt-3 grid gap-3" : "hidden"} id={commentsRegionId}>
+      <div
+        className={expanded ? "mt-3 grid min-w-0 max-w-full gap-3" : "hidden"}
+        id={commentsRegionId}
+      >
         {threads.length > 0 ? (
-          <div className="grid gap-3">
+          <div className="grid min-w-0 gap-3">
             {threads.map((thread) => (
               <CommentThread
                 action={action}
@@ -133,13 +137,13 @@ export function MemoryComments({
             ))}
           </div>
         ) : (
-          <p className="text-sm text-slate-500">No comments yet.</p>
+          <p className="text-sm font-semibold text-slate-500">No comments yet.</p>
         )}
 
         {viewerSignedIn ? (
           <CommentForm action={action} />
         ) : (
-          <p className="rounded-xl border border-dashed border-black/20 px-3 py-2 text-sm text-slate-600">
+          <p className="memory-board-comment-note rounded-xl border-2 border-dashed px-3 py-2 text-sm font-semibold">
             Sign in to comment.
           </p>
         )}
@@ -166,12 +170,12 @@ function CommentThread({
   const isReplying = replyingTo === thread.comment.id;
 
   return (
-    <article className="grid gap-2">
+    <article className="grid min-w-0 max-w-full gap-2 overflow-hidden">
       <CommentBubble comment={thread.comment} />
-      <div className="flex flex-wrap items-center gap-3 pl-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 pl-2 sm:gap-3 sm:pl-3">
         {viewerSignedIn ? (
           <button
-            className="text-xs font-bold text-slate-600 transition hover:text-black"
+            className="memory-board-comment-link max-w-full rounded-full px-1 text-xs font-black transition"
             onClick={() => setReplyingTo(isReplying ? null : thread.comment.id)}
             type="button"
           >
@@ -179,7 +183,7 @@ function CommentThread({
           </button>
         ) : null}
         {thread.replies.length > 0 ? (
-          <span className="text-xs font-semibold text-slate-500">
+          <span className="text-xs font-bold text-slate-500">
             {thread.replies.length}{" "}
             {thread.replies.length === 1 ? "reply" : "replies"}
           </span>
@@ -187,7 +191,7 @@ function CommentThread({
       </div>
 
       {isReplying ? (
-        <div className="pl-4">
+        <div className="min-w-0 max-w-full pl-2 sm:pl-4">
           <CommentForm
             action={action}
             onPosted={onPostedReply}
@@ -200,7 +204,7 @@ function CommentThread({
       ) : null}
 
       {thread.replies.length > 0 ? (
-        <div className="ml-4 grid gap-2 border-l border-black/10 pl-3">
+        <div className="memory-board-replies ml-2 grid min-w-0 max-w-full gap-2 border-l-2 border-dashed pl-2 sm:ml-4 sm:pl-3">
           {thread.replies.map((reply) => (
             <CommentBubble comment={reply} isReply key={reply.id} />
           ))}
@@ -221,19 +225,19 @@ function CommentBubble({
     <div
       className={
         isReply
-          ? "rounded-xl bg-white/70 px-3 py-2.5"
-          : "rounded-xl bg-slate-100 px-3 py-2.5"
+          ? "memory-comment-bubble memory-comment-bubble-reply min-w-0 max-w-full overflow-hidden rounded-xl border px-3 py-2.5"
+          : "memory-comment-bubble min-w-0 max-w-full overflow-hidden rounded-xl border px-3 py-2.5"
       }
     >
-      <div className="flex items-start justify-between gap-3">
-        <p className="min-w-0 truncate text-xs font-bold text-black">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
+        <p className="min-w-0 truncate text-xs font-black text-black">
           {comment.authorDisplayName ?? "Evespace Friend"}
         </p>
-        <time className="shrink-0 text-[0.68rem] font-medium text-slate-500">
+        <time className="shrink-0 whitespace-nowrap text-[0.68rem] font-semibold text-slate-500">
           {formatDate(comment.createdAt)}
         </time>
       </div>
-      <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-5 text-slate-800">
+      <p className="mt-1 min-w-0 whitespace-pre-wrap break-words text-sm font-medium leading-5 text-slate-800 [overflow-wrap:anywhere]">
         {comment.body}
       </p>
     </div>
@@ -256,29 +260,31 @@ function CommentForm({
   successText?: string;
 }) {
   const formRef = useRef<HTMLFormElement | null>(null);
+  const router = useRouter();
   const [state, formAction] = useActionState(action, initialState);
 
   useEffect(() => {
     if (state.ok) {
       formRef.current?.reset();
+      router.refresh();
       onPosted?.();
     }
-  }, [onPosted, state.ok]);
+  }, [onPosted, router, state]);
 
   return (
-    <form action={formAction} className="grid gap-2" ref={formRef}>
+    <form action={formAction} className="grid min-w-0 max-w-full gap-2" ref={formRef}>
       {parentCommentId ? (
         <input name="parentCommentId" type="hidden" value={parentCommentId} />
       ) : null}
       <textarea
-        className="min-h-20 resize-none rounded-xl border border-black/20 bg-white px-3 py-2 text-sm text-black outline-none transition placeholder:text-slate-400 focus:border-black focus:ring-2 focus:ring-cyan-200"
+        className="memory-board-comment-input min-h-20 w-full min-w-0 max-w-full resize-none rounded-xl border-2 px-3 py-2 text-sm font-medium outline-none transition"
         maxLength={500}
         name="body"
         placeholder={placeholder}
         required
       />
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-slate-500">
+      <div className="grid min-w-0 gap-2 min-[380px]:grid-cols-[minmax(0,1fr)_auto] min-[380px]:items-center">
+        <p className="memory-board-comment-status min-w-0 text-xs font-semibold [overflow-wrap:anywhere]" aria-live="polite">
           {state.error ?? (state.ok ? successText : "Be kind and keep it short.")}
         </p>
         <CommentSubmitButton label={submitLabel} pendingLabel="Posting" />

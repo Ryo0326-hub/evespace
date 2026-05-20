@@ -29,7 +29,7 @@ export default async function ManageEventEntryPage({
   return (
     <main className="cosmic-bg flex min-h-screen items-center justify-center px-4">
       <Card className="max-w-lg text-center">
-        <h1 className="text-2xl font-semibold text-white">
+        <h1 className="evespace-section-title">
           You are not an admin for this event.
         </h1>
         <p className="mt-3 text-sm leading-6 text-slate-300">

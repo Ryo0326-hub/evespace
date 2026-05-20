@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
 import { requireBoardAdmin } from "@/lib/auth/permissions";
-import { canPostToBoard, getAccessibleBoardById } from "@/lib/data/boards";
+import {
+  canPostToBoard,
+  getAccessibleBoardById,
+  getBoardById,
+} from "@/lib/data/boards";
 import { getEventBySlug } from "@/lib/data/events";
 import { createMemoryPostAddedNotifications } from "@/lib/data/notifications";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -458,6 +462,142 @@ export async function moderatePostAction(formData: FormData) {
   revalidatePath("/dashboard");
 }
 
+export async function deleteOwnMemoryPostAction(
+  postId: string,
+  returnPath: string,
+) {
+  const profile = await ensureUserProfile();
+
+  if (!profile) {
+    redirect("/login");
+  }
+
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    throw new Error("Supabase service role is not configured.");
+  }
+
+  const { data: post, error: postError } = await supabase
+    .from("memory_posts")
+    .select("id, board_id, profile_id, user_id, clerk_user_id, storage_path")
+    .eq("id", postId)
+    .maybeSingle();
+
+  if (postError) {
+    throw new Error(postError.message);
+  }
+
+  if (!post) {
+    redirect(returnPath);
+  }
+
+  const isOwner =
+    post.profile_id === profile.id ||
+    post.user_id === profile.id ||
+    post.clerk_user_id === profile.clerkUserId;
+
+  if (!isOwner) {
+    throw new Error("You can only delete memories you posted.");
+  }
+
+  const boardId = String(post.board_id ?? "");
+  const board = boardId ? await getBoardById(boardId) : null;
+  const mediaRows = await getPostMediaForDeletion(postId, supabase);
+  const legacyStoragePath =
+    typeof post.storage_path === "string" && post.storage_path.length > 0
+      ? post.storage_path
+      : null;
+
+  const { error: deleteError } = await supabase
+    .from("memory_posts")
+    .delete()
+    .eq("id", postId);
+
+  if (deleteError) {
+    throw new Error(deleteError.message);
+  }
+
+  await removePostMediaFiles({
+    legacyStoragePath,
+    mediaRows,
+    supabase,
+  });
+
+  if (board) {
+    revalidatePath(`/boards/${board.id}`);
+
+    if (board.boardType === "official_event") {
+      revalidatePath(`/events/${board.slug}`);
+      revalidatePath(`/events/${board.slug}/board`);
+      revalidatePath(`/official-events/${board.id}`);
+      revalidatePath(`/official-events/${board.id}/board`);
+    }
+  }
+
+  revalidatePath(returnPath);
+  redirect(returnPath);
+}
+
+async function getPostMediaForDeletion(
+  postId: string,
+  supabase: SupabaseAdminClient,
+) {
+  const { data, error } = await supabase
+    .from("memory_post_media")
+    .select("storage_bucket, storage_path")
+    .eq("post_id", postId);
+
+  if (error) {
+    if (isMissingNormalizedMemoryTableError(error)) {
+      return [];
+    }
+
+    throw new Error(error.message);
+  }
+
+  return (data ?? []).flatMap((row) => {
+    const storageBucket = String(row.storage_bucket ?? "");
+    const storagePath = String(row.storage_path ?? "");
+
+    if (!storageBucket || !storagePath || storageBucket === "legacy-external") {
+      return [];
+    }
+
+    return [{ storageBucket, storagePath }];
+  });
+}
+
+async function removePostMediaFiles({
+  legacyStoragePath,
+  mediaRows,
+  supabase,
+}: {
+  legacyStoragePath: string | null;
+  mediaRows: Array<{ storageBucket: string; storagePath: string }>;
+  supabase: SupabaseAdminClient;
+}) {
+  const byBucket = new Map<string, Set<string>>();
+
+  for (const media of mediaRows) {
+    const paths = byBucket.get(media.storageBucket) ?? new Set<string>();
+    paths.add(media.storagePath);
+    byBucket.set(media.storageBucket, paths);
+  }
+
+  if (legacyStoragePath) {
+    const paths = byBucket.get(legacyMemoryPhotoBucket) ?? new Set<string>();
+    paths.add(legacyStoragePath);
+    byBucket.set(legacyMemoryPhotoBucket, paths);
+  }
+
+  await Promise.all(
+    Array.from(byBucket.entries()).map(([bucket, paths]) =>
+      supabase.storage.from(bucket).remove(Array.from(paths)),
+    ),
+  );
+}
+
 export type CreateMemoryCommentState = {
   error: string | null;
   ok: boolean;
@@ -521,6 +661,14 @@ export async function createMemoryCommentAction(
       .maybeSingle();
 
     if (parentError) {
+      if (isMissingParentCommentColumnError(parentError)) {
+        return {
+          error:
+            "Comment replies need the latest Supabase migration. Run supabase/migrations/0013_ensure_memory_comment_replies.sql, then try again.",
+          ok: false,
+        };
+      }
+
       return { error: parentError.message, ok: false };
     }
 
@@ -549,7 +697,19 @@ export async function createMemoryCommentAction(
   const { error } = await supabase.from("memory_post_comments").insert(commentPayload);
 
   if (error) {
+    if (isMissingParentCommentColumnError(error)) {
+      return {
+        error:
+          "Comment replies need the latest Supabase migration. Run supabase/migrations/0013_ensure_memory_comment_replies.sql, then try again.",
+        ok: false,
+      };
+    }
+
     return { error: error.message, ok: false };
+  }
+
+  if (_returnPath.startsWith("/")) {
+    revalidatePath(_returnPath);
   }
 
   if (board.boardType === "official_event") {
@@ -559,6 +719,19 @@ export async function createMemoryCommentAction(
     revalidatePath(`/boards/${board.id}`);
   }
   return { error: null, ok: true };
+}
+
+function isMissingParentCommentColumnError(error: { code?: string; message?: string }) {
+  const message = error.message?.toLowerCase() ?? "";
+
+  return (
+    error.code === "42703" ||
+    error.code === "PGRST204" ||
+    (message.includes("parent_comment_id") &&
+      (message.includes("does not exist") ||
+        message.includes("schema cache") ||
+        message.includes("could not find")))
+  );
 }
 
 function readStickers(

@@ -5,7 +5,7 @@ import type { EventSchedule } from "@/types/evespace";
 export function EventScheduleList({ schedules }: { schedules: EventSchedule[] }) {
   return (
     <Card>
-      <h2 className="text-xl font-semibold text-white">Schedule</h2>
+      <h2 className="evespace-card-title">Schedule</h2>
       {schedules.length > 0 ? (
         <ol className="mt-5 grid gap-4">
           {schedules.map((item) => (

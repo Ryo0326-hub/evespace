@@ -39,17 +39,17 @@ export default async function EditOfficialEventPage({
     .join("\n");
 
   return (
-    <main className="cosmic-bg min-h-screen px-4 py-8 sm:px-8">
-      <div className="mx-auto grid max-w-5xl gap-6">
+    <main className="cosmic-bg evespace-page">
+      <div className="evespace-shell max-w-5xl">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+          <div className="evespace-page-header">
             <LinkButton href="/admin/official-events" variant="ghost">
               Back to Official Events
             </LinkButton>
-            <p className="mt-8 text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
+            <p className="evespace-kicker mt-6">
               Edit Official Event
             </p>
-            <h1 className="mt-3 text-4xl font-semibold text-white">{board.title}</h1>
+            <h1 className="evespace-page-title">{board.title}</h1>
             <div className="mt-3">
               <EventVerificationBadge status={board.verificationStatus} />
             </div>

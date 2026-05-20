@@ -13,6 +13,7 @@ import { replaceScheduleItems, upsertScheduleItems } from "@/lib/data/schedules"
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { generateStarCoordinate, slugify } from "@/lib/utils";
 import { getPlanetLevelUp } from "@/lib/planet/planet-levels";
+import { DEFAULT_BOARD_THEME, toBoardThemeId } from "@/lib/board-themes";
 import type {
   BoardBackgroundTheme,
   EventInput,
@@ -112,8 +113,8 @@ function readEventInput(formData: FormData): EventInput {
     slug,
     description: clean(formData.get("description")),
     category: clean(formData.get("category")),
-    startTime: clean(formData.get("startTime")),
-    endTime: clean(formData.get("endTime")),
+    startTime: readOptionalDateTime(formData, "start"),
+    endTime: readOptionalDateTime(formData, "end"),
     locationName: clean(formData.get("locationName")),
     address: clean(formData.get("address")),
     googleMapsUrl: clean(formData.get("googleMapsUrl")),
@@ -132,6 +133,17 @@ function readEventInput(formData: FormData): EventInput {
     organizerEmail: clean(formData.get("organizerEmail")),
     verificationStatus: readVerificationStatus(formData),
   };
+}
+
+function readOptionalDateTime(formData: FormData, prefix: "start" | "end") {
+  const date = clean(formData.get(`${prefix}Date`));
+  const time = clean(formData.get(`${prefix}TimeOfDay`));
+
+  if (!date) {
+    return null;
+  }
+
+  return time ? `${date}T${time}` : date;
 }
 
 function readScheduleText(formData: FormData) {
@@ -159,18 +171,9 @@ function readScheduleText(formData: FormData) {
 }
 
 function readBoardTheme(formData: FormData): BoardBackgroundTheme {
-  const value = String(formData.get("boardBackgroundTheme") ?? "soft_cream");
-
-  if (
-    value === "pale_blue" ||
-    value === "pale_pink" ||
-    value === "pale_green" ||
-    value === "pale_lavender"
-  ) {
-    return value;
-  }
-
-  return "soft_cream";
+  return toBoardThemeId(
+    String(formData.get("boardBackgroundTheme") ?? DEFAULT_BOARD_THEME),
+  );
 }
 
 function readModerationMode(formData: FormData): ModerationMode {

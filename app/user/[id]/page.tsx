@@ -38,8 +38,8 @@ export default async function UserProfilePage(props: { params: Promise<{ id: str
         );
 
   return (
-    <main className="cosmic-bg min-h-screen overflow-hidden px-3 py-6 sm:px-8 sm:py-8">
-      <div className="mx-auto grid max-w-7xl gap-8">
+    <main className="cosmic-bg evespace-page overflow-hidden">
+      <div className="evespace-shell max-w-7xl">
         <UserPlanet
           actionSlot={
             currentUser.id !== id ? (
@@ -59,8 +59,8 @@ export default async function UserProfilePage(props: { params: Promise<{ id: str
         />
 
         <div className="grid gap-8">
-          <section className="grid gap-4">
-            <h2 className="text-2xl font-semibold text-white">Shared Memory Boards</h2>
+          <section className="evespace-section">
+            <h2 className="evespace-section-title">Shared Memory Boards</h2>
             {boards.length === 0 ? (
               <EmptyState
                 description={`${profile.displayName ?? "This user"} has not shared any memory boards with you.`}

@@ -28,60 +28,74 @@ export default async function ExplorePage(props: {
     );
   }
 
+  const suggestedProfiles = profiles.slice(0, 10);
+
   return (
-    <main className="cosmic-bg min-h-screen px-4 py-8 sm:px-8">
-      <div className="mx-auto grid max-w-5xl gap-8">
-        <header>
-          <p className="text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
+    <main className="cosmic-bg evespace-page">
+      <div className="evespace-shell max-w-5xl">
+        <header className="evespace-page-header">
+          <p className="evespace-kicker">
             Explore
           </p>
-          <h1 className="mt-3 text-4xl font-semibold text-white">
+          <h1 className="evespace-page-title">
             Find your circle
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-            Follow friends to see memory boards they share with followers in your
-            galaxy.
-          </p>
         </header>
 
         <SearchBar />
 
-        {profiles.length === 0 ? (
+        {suggestedProfiles.length === 0 ? (
           <EmptyState
             title="No other users yet."
             description="When more people join Evespace, you will be able to follow them here."
           />
         ) : (
-          <div className="grid gap-4">
-            {profiles.map((person) => (
-              <Card
-                className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
-                key={person.id}
-              >
-                <Link
-                  className="flex min-w-0 items-center gap-4 transition-opacity hover:opacity-80"
-                  href={`/user/${person.id}`}
+          <section className="evespace-section">
+            <div className="evespace-section-header">
+              <div>
+                <p className="evespace-section-kicker">
+                  Suggested
+                </p>
+                <h2 className="evespace-section-title mt-1">
+                  Suggested people
+                </h2>
+              </div>
+              <p className="evespace-section-count">
+                {suggestedProfiles.length}/10
+              </p>
+            </div>
+
+            <Card className="grid gap-3 p-3 sm:p-4">
+              {suggestedProfiles.map((person) => (
+                <div
+                  className="grid gap-3 rounded-2xl border border-white/10 bg-white/[0.05] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                  key={person.id}
                 >
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-white/10 bg-cyan-200/15 text-sm font-bold text-cyan-100">
-                    {getInitials(person.displayName ?? person.email)}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-lg font-semibold text-white">
-                      {person.displayName ?? person.email ?? "Evespace User"}
-                    </p>
-                    {person.email ? (
-                      <p className="truncate text-sm text-slate-400">{person.email}</p>
-                    ) : null}
-                  </div>
-                </Link>
-                <FollowButton
-                  followingProfileId={person.id}
-                  returnPath="/explore"
-                  status={person.followStatus}
-                />
-              </Card>
-            ))}
-          </div>
+                  <Link
+                    className="flex min-w-0 items-center gap-4 transition-opacity hover:opacity-80"
+                    href={`/user/${person.id}`}
+                  >
+                    <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-cyan-100/25 bg-cyan-100/10 text-sm font-bold text-cyan-100 shadow-[0_0_18px_rgba(103,232,249,0.12)]">
+                      {getInitials(person.displayName ?? person.email)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-semibold text-white">
+                        {person.displayName ?? person.email ?? "Evespace User"}
+                      </p>
+                      {person.email ? (
+                        <p className="truncate text-sm text-slate-400">{person.email}</p>
+                      ) : null}
+                    </div>
+                  </Link>
+                  <FollowButton
+                    followingProfileId={person.id}
+                    returnPath="/explore"
+                    status={person.followStatus}
+                  />
+                </div>
+              ))}
+            </Card>
+          </section>
         )}
       </div>
     </main>

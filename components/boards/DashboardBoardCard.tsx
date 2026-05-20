@@ -2,49 +2,66 @@ import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DeleteBoardButton } from "@/components/boards/DeleteBoardButton";
 import { boardAccessLabel } from "@/lib/boards/labels";
-import { boardBackgrounds } from "@/lib/constants";
+import { getBoardTheme } from "@/lib/board-themes";
 import { cn, compactDateLocation } from "@/lib/utils";
 import type { Board } from "@/types/evespace";
 
 export function DashboardBoardCard({
   board,
   canDelete = false,
+  canEdit = true,
+  themeOverride,
 }: {
   board: Board;
   canDelete?: boolean;
+  canEdit?: boolean;
+  themeOverride?: Board["boardBackgroundTheme"];
 }) {
-  const background = boardBackgrounds[board.boardBackgroundTheme];
+  const background = getBoardTheme(themeOverride ?? board.boardBackgroundTheme);
   const href =
     board.boardType === "official_event" ? `/events/${board.slug}` : `/boards/${board.id}`;
 
   return (
-    <Card className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
-      <div className="flex gap-4">
+    <Card
+      className={cn(
+        "grid gap-5 overflow-hidden rounded-[2rem] border-[3px] border-black p-5 text-black shadow-[8px_8px_0_rgba(5,5,5,0.16)] backdrop-blur-0 md:grid-cols-[minmax(0,1fr)_auto] md:items-center",
+        background.cardClassName,
+      )}
+    >
+      <div className="flex min-w-0 gap-4">
         <div
           className={cn(
-            "h-16 w-16 shrink-0 rounded-2xl border border-black/20",
-            background.swatchClassName,
+            "size-16 shrink-0 rounded-[1.35rem] border-2 border-black shadow-[3px_3px_0_rgba(5,5,5,0.16)] sm:size-20",
+            background.previewClassName,
           )}
         />
-        <div>
-          <p className="text-xl font-semibold text-white">{board.title}</p>
-          <p className="mt-1 text-sm text-slate-400">
+        <div className="min-w-0 pt-1">
+          <p className={cn("min-w-0 text-2xl font-black leading-tight [overflow-wrap:anywhere]", background.textClassName)}>
+            {board.title}
+          </p>
+          <p className={cn("mt-2 text-sm font-black", background.mutedTextClassName)}>
             {boardAccessLabel(board)}
           </p>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className={cn("mt-2 text-sm font-semibold", background.mutedTextClassName)}>
             {compactDateLocation(board.startTime, board.locationName)}
           </p>
           {board.ownerDisplayName ? (
-            <p className="mt-1 text-xs text-slate-500">by {board.ownerDisplayName}</p>
+            <p className={cn("mt-1 text-xs font-bold", background.mutedTextClassName)}>
+              by {board.ownerDisplayName}
+            </p>
           ) : null}
         </div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        <LinkButton href={href}>
+      <div className="flex min-w-0 flex-wrap gap-2 md:justify-end">
+        <LinkButton className="memory-board-cute-button" href={href}>
           Open Board
         </LinkButton>
-        {board.boardType === "private_memory" ? (
-          <LinkButton href={`/boards/${board.id}/edit`} variant="secondary">
+        {canEdit && board.boardType === "private_memory" ? (
+          <LinkButton
+            className="memory-board-soft-button"
+            href={`/boards/${board.id}/edit`}
+            variant="secondary"
+          >
             Edit
           </LinkButton>
         ) : null}

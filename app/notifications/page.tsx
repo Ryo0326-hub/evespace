@@ -24,12 +24,15 @@ export default async function NotificationsPage() {
   const groupedNotifications = groupNotificationsByDay(notifications);
 
   return (
-    <main className="cosmic-bg min-h-screen px-4 py-8 sm:px-8">
-      <div className="mx-auto grid max-w-3xl gap-6">
-        <header>
-          <p className="text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
+    <main className="cosmic-bg evespace-page">
+      <div className="evespace-shell max-w-3xl">
+        <header className="evespace-page-header">
+          <p className="evespace-kicker">
             Notifications
           </p>
+          <h1 className="evespace-page-title">
+            Latest updates
+          </h1>
         </header>
 
         {notifications.length === 0 ? (
@@ -38,7 +41,7 @@ export default async function NotificationsPage() {
             description="Your updates will appear here as they happen."
           />
         ) : (
-          <div className="grid gap-6">
+          <div className="grid gap-7">
             <NotificationSection
               notifications={groupedNotifications.today}
               title="Today"
@@ -66,8 +69,8 @@ function NotificationSection({
   }
 
   return (
-    <section className="grid gap-3">
-      <h2 className="text-lg font-semibold text-white">{title}</h2>
+    <section className="evespace-section">
+      <h2 className="evespace-subsection-title">{title}</h2>
       {notifications.map((notification) => (
         <NotificationItem key={notification.id} notification={notification} />
       ))}

@@ -1,4 +1,5 @@
 import { isRegisteredStickerId } from "@/lib/stickers/sticker-registry";
+import { toBoardThemeId } from "@/lib/board-themes";
 import type {
   Board,
   Event,
@@ -52,7 +53,7 @@ export function mapBoard(row: DbEvent): Board {
     longitude: (row.longitude as number | null) ?? null,
     sellingGoods: Boolean(row.selling_goods),
     goodsDescription: (row.goods_description as string | null) ?? null,
-    boardBackgroundTheme: EventTheme(row.board_background_theme),
+    boardBackgroundTheme: toBoardThemeId(row.board_background_theme as string | null),
     moderationMode:
       row.moderation_mode === "post_first" ? "post_first" : "pre_approval",
     visibility:
@@ -280,19 +281,6 @@ export function mapProfile(row: DbEvent): Profile {
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };
-}
-
-function EventTheme(value: unknown): Event["boardBackgroundTheme"] {
-  if (
-    value === "pale_blue" ||
-    value === "pale_pink" ||
-    value === "pale_green" ||
-    value === "pale_lavender"
-  ) {
-    return value;
-  }
-
-  return "soft_cream";
 }
 
 function clampUnitInterval(value: number) {
