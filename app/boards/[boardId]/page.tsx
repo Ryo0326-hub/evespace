@@ -55,7 +55,7 @@ export default async function PrivateBoardPage({
   return (
     <main className={`${background.pageClassName} min-h-dvh overflow-x-clip overflow-y-visible px-3 pb-24 pt-4 text-slate-950 sm:px-6 sm:py-6 lg:px-8`}>
       <div className="mx-auto min-w-0 max-w-7xl">
-        <nav className="grid min-w-0 grid-cols-1 gap-3 sm:flex sm:items-center sm:justify-between">
+        <nav className="grid min-w-0 gap-3 sm:flex sm:items-center sm:justify-between">
           <LinkButton
             className="memory-board-soft-button w-full sm:w-auto"
             href="/dashboard"
@@ -63,7 +63,10 @@ export default async function PrivateBoardPage({
           >
             Back to Dashboard
           </LinkButton>
-          <div className="flex min-w-0 flex-wrap gap-2">
+          <div
+            className="grid min-w-0 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:justify-end"
+            id="memory-board-actions"
+          >
             {canPost ? (
               <LinkButton
                 className={postMemoryActionClassName}
@@ -85,6 +88,7 @@ export default async function PrivateBoardPage({
                 Edit Board
               </LinkButton>
             ) : null}
+            <StickerStoreButton />
           </div>
         </nav>
 
@@ -124,18 +128,6 @@ export default async function PrivateBoardPage({
             </div>
           ) : null}
         </header>
-
-        <div
-          className={cn(
-            "-mx-3 px-3 sticky top-14 z-[56] mb-4 mt-6 shrink-0 border-b border-black/15 py-3 shadow-sm backdrop-blur-md sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
-            background.navClassName,
-          )}
-          id="memory-board-actions"
-        >
-          <div className="flex justify-end">
-            <StickerStoreButton />
-          </div>
-        </div>
 
         <div
           className={cn(

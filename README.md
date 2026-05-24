@@ -29,9 +29,14 @@ SUPABASE_SERVICE_ROLE_KEY=
 RESEND_API_KEY=
 EMAIL_FROM=
 APP_BASE_URL=
+GOOGLE_MAPS_API_KEY=
+GOOGLE_MAPS_SERVER_API_KEY=
+NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY=
 ```
 
 Without Supabase configuration, the public app falls back to mock events and memories so the visual prototype remains usable.
+
+Use `GOOGLE_MAPS_API_KEY` or `GOOGLE_MAPS_SERVER_API_KEY` for a single Maps Platform key. For stricter production restrictions, you can instead split it into `GOOGLE_MAPS_SERVER_API_KEY` for Geocoding and `NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY` for Maps JavaScript and Routes.
 
 ## Database
 

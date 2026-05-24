@@ -50,7 +50,7 @@ export function MemoryCard({
         data-memory-card-id={post.id}
         onClick={() => onSelect?.(post.id)}
         className={cn(
-          "relative min-w-0 max-w-full overflow-hidden rounded-[1.7rem] border-[3px] border-black bg-[#fffaf0] p-3 text-black shadow-[7px_7px_0_rgba(5,5,5,0.13)] transition sm:p-4",
+          "relative min-w-0 max-w-full overflow-hidden rounded-[1.7rem] border-[3px] border-black bg-[#fffaf0] p-3 text-black transition sm:p-4",
           selected ? "ring-4 ring-pink-200/85 ring-offset-2 ring-offset-[#fffaf0]" : "",
         )}
       >
@@ -107,7 +107,7 @@ export function MemoryCard({
           </div>
         ) : null}
 
-        <div className="relative z-10 mt-3 overflow-hidden rounded-[1.15rem] border-2 border-black bg-white shadow-[3px_3px_0_rgba(5,5,5,0.12)]">
+        <div className="relative z-10 mt-3 overflow-hidden rounded-[1.15rem] border-2 border-black bg-white">
           <img
             src={post.imageUrl}
             alt={post.caption ?? "Event memory"}

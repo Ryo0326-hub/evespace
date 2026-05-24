@@ -8,6 +8,7 @@ import type {
   MemoryPostComment,
   MemoryPostMedia,
   OfficialEventGoodsService,
+  OfficialEventSponsor,
   PlacedSticker,
   Profile,
   StickerSelection,
@@ -51,6 +52,9 @@ export function mapBoard(row: DbEvent): Board {
     googleMapsUrl: (row.google_maps_url as string | null) ?? null,
     latitude: (row.latitude as number | null) ?? null,
     longitude: (row.longitude as number | null) ?? null,
+    heroImageUrl: (row.hero_image_url as string | null) ?? null,
+    heroImageStorageBucket: (row.hero_image_storage_bucket as string | null) ?? null,
+    heroImageStoragePath: (row.hero_image_storage_path as string | null) ?? null,
     sellingGoods: Boolean(row.selling_goods),
     goodsDescription: (row.goods_description as string | null) ?? null,
     boardBackgroundTheme: toBoardThemeId(row.board_background_theme as string | null),
@@ -140,6 +144,23 @@ export function mapOfficialEventGoodsService(row: DbEvent): OfficialEventGoodsSe
     price: (row.price as string | null) ?? null,
     imageUrl: (row.image_url as string | null) ?? null,
     externalLink: (row.external_link as string | null) ?? null,
+    sortOrder: Number(row.sort_order ?? 0),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+export function mapOfficialEventSponsor(row: DbEvent): OfficialEventSponsor {
+  return {
+    id: String(row.id),
+    officialEventId: String(row.board_id ?? row.official_event_id),
+    name: String(row.name),
+    description: (row.description as string | null) ?? null,
+    tier: (row.tier as string | null) ?? null,
+    logoUrl: (row.logo_url as string | null) ?? null,
+    logoStorageBucket: (row.logo_storage_bucket as string | null) ?? null,
+    logoStoragePath: (row.logo_storage_path as string | null) ?? null,
+    websiteUrl: (row.website_url as string | null) ?? null,
     sortOrder: Number(row.sort_order ?? 0),
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),

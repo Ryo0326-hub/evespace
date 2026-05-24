@@ -1,6 +1,8 @@
 import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { DeleteBoardButton } from "@/components/boards/DeleteBoardButton";
+import { DeleteHostedOfficialEventButton } from "@/components/official-events/DeleteHostedOfficialEventButton";
+import { EventVerificationBadge } from "@/components/events/EventVerificationBadge";
 import { boardAccessLabel } from "@/lib/boards/labels";
 import { getBoardTheme } from "@/lib/board-themes";
 import { cn, compactDateLocation } from "@/lib/utils";
@@ -19,7 +21,7 @@ export function DashboardBoardCard({
 }) {
   const background = getBoardTheme(themeOverride ?? board.boardBackgroundTheme);
   const href =
-    board.boardType === "official_event" ? `/events/${board.slug}` : `/boards/${board.id}`;
+    board.boardType === "official_event" ? `/official-events/${board.id}` : `/boards/${board.id}`;
 
   return (
     <Card
@@ -39,9 +41,15 @@ export function DashboardBoardCard({
           <p className={cn("min-w-0 text-2xl font-black leading-tight [overflow-wrap:anywhere]", background.textClassName)}>
             {board.title}
           </p>
-          <p className={cn("mt-2 text-sm font-black", background.mutedTextClassName)}>
-            {boardAccessLabel(board)}
-          </p>
+          {board.boardType === "official_event" ? (
+            <span className="mt-2 inline-flex">
+              <EventVerificationBadge status={board.verificationStatus} />
+            </span>
+          ) : (
+            <p className={cn("mt-2 text-sm font-black", background.mutedTextClassName)}>
+              {boardAccessLabel(board)}
+            </p>
+          )}
           <p className={cn("mt-2 text-sm font-semibold", background.mutedTextClassName)}>
             {compactDateLocation(board.startTime, board.locationName)}
           </p>
@@ -54,7 +62,7 @@ export function DashboardBoardCard({
       </div>
       <div className="flex min-w-0 flex-wrap gap-2 md:justify-end">
         <LinkButton className="memory-board-cute-button" href={href}>
-          Open Board
+          {board.boardType === "official_event" ? "Open Page" : "Open Board"}
         </LinkButton>
         {canEdit && board.boardType === "private_memory" ? (
           <LinkButton
@@ -67,6 +75,9 @@ export function DashboardBoardCard({
         ) : null}
         {canDelete && board.boardType === "private_memory" ? (
           <DeleteBoardButton boardId={board.id} boardTitle={board.title} />
+        ) : null}
+        {canDelete && board.boardType === "official_event" ? (
+          <DeleteHostedOfficialEventButton boardId={board.id} boardTitle={board.title} />
         ) : null}
       </div>
     </Card>

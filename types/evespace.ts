@@ -105,6 +105,9 @@ export type Board = {
   googleMapsUrl: string | null;
   latitude: number | null;
   longitude: number | null;
+  heroImageUrl: string | null;
+  heroImageStorageBucket: string | null;
+  heroImageStoragePath: string | null;
   sellingGoods: boolean;
   goodsDescription: string | null;
   boardBackgroundTheme: BoardBackgroundTheme;
@@ -161,6 +164,21 @@ export type OfficialEventGoodsService = {
   price: string | null;
   imageUrl: string | null;
   externalLink: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type OfficialEventSponsor = {
+  id: string;
+  officialEventId: string;
+  name: string;
+  description: string | null;
+  tier: string | null;
+  logoUrl: string | null;
+  logoStorageBucket: string | null;
+  logoStoragePath: string | null;
+  websiteUrl: string | null;
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
@@ -250,6 +268,9 @@ export type EventInput = {
   googleMapsUrl?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  heroImageUrl?: string | null;
+  heroImageStorageBucket?: string | null;
+  heroImageStoragePath?: string | null;
   sellingGoods?: boolean;
   goodsDescription?: string | null;
   boardBackgroundTheme?: BoardBackgroundTheme;

@@ -38,41 +38,36 @@ export default async function MemoryBoardPage({
       className={`${background.pageClassName} min-h-dvh overflow-x-clip overflow-y-visible px-3 pb-24 pt-4 text-slate-950 sm:px-6 sm:py-6 lg:px-8`}
     >
       <div className="mx-auto min-w-0 max-w-7xl">
-        <div
-          className={cn(
-            "-mx-3 px-3 max-sm:sticky max-sm:top-14 max-sm:z-40 max-sm:border-b max-sm:border-black/10 max-sm:py-3 max-sm:backdrop-blur-sm",
-            background.navClassName,
-            "sm:static sm:z-auto sm:mx-0 sm:border-0 sm:px-0 sm:py-0 sm:backdrop-blur-none",
-          )}
-        >
-          <nav className="grid min-w-0 grid-cols-1 gap-3 sm:flex sm:items-center sm:justify-between">
-            <LinkButton
-              className="memory-board-soft-button w-full sm:w-auto"
-              href={`/events/${event.slug}`}
-              variant="ghost"
-            >
-              Back to Event
-            </LinkButton>
-            <div className="flex min-w-0 flex-wrap gap-2" id="memory-board-actions">
-              <Show when="signed-in">
-                <LinkButton
-                  className={postMemoryActionClassName}
-                  href={`/events/${event.slug}/post`}
-                >
+        <nav className="grid min-w-0 gap-3 sm:flex sm:items-center sm:justify-between">
+          <LinkButton
+            className="memory-board-soft-button w-full sm:w-auto"
+            href={`/events/${event.slug}`}
+            variant="ghost"
+          >
+            Back to Event
+          </LinkButton>
+          <div
+            className="grid min-w-0 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:justify-end"
+            id="memory-board-actions"
+          >
+            <Show when="signed-in">
+              <LinkButton
+                className={postMemoryActionClassName}
+                href={`/events/${event.slug}/post`}
+              >
+                Post Memory
+              </LinkButton>
+            </Show>
+            <Show when="signed-out">
+              <SignInButton mode="modal">
+                <button className={postMemoryActionClassName} type="button">
                   Post Memory
-                </LinkButton>
-              </Show>
-              <Show when="signed-out">
-                <SignInButton mode="modal">
-                  <button className={postMemoryActionClassName} type="button">
-                    Post Memory
-                  </button>
-                </SignInButton>
-              </Show>
-              <StickerStoreButton />
-            </div>
-          </nav>
-        </div>
+                </button>
+              </SignInButton>
+            </Show>
+            <StickerStoreButton />
+          </div>
+        </nav>
 
         <header className="memory-board-title-card my-7 max-w-3xl rounded-[2rem] p-5 sm:my-10 sm:p-8">
           <p className="text-sm font-black uppercase tracking-[0.35em] text-slate-600">

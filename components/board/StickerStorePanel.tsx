@@ -147,7 +147,7 @@ export function StickerStorePanel({
         transform: `translate3d(${panelOffset.x}px, ${panelOffset.y}px, 0)`,
       }}
     >
-      <section className="memory-board-sticker-store flex max-h-[35vh] flex-col overflow-hidden rounded-[1.35rem] backdrop-blur-xl sm:max-h-[28rem] sm:rounded-[1.5rem]">
+      <section className="memory-board-sticker-store flex max-h-[35vh] flex-col overflow-hidden rounded-[1.35rem] sm:max-h-[28rem] sm:rounded-[1.5rem]">
         <header className="grid shrink-0 gap-3 border-b-2 border-dashed border-black/15 px-3 py-3">
           <div className="flex items-start justify-between gap-3">
             <div
@@ -177,7 +177,7 @@ export function StickerStorePanel({
               </p>
             </div>
             <button
-              className="shrink-0 rounded-full border-2 border-black bg-[#ffdbe8] px-3 py-1.5 text-[0.68rem] font-black text-black shadow-[2px_2px_0_rgba(5,5,5,0.14)]"
+              className="shrink-0 rounded-full border-2 border-black bg-[#ffdbe8] px-3 py-1.5 text-[0.68rem] font-black text-black"
               onClick={onClose}
               type="button"
             >
@@ -212,7 +212,7 @@ export function StickerStorePanel({
                 className={cn(
                   "shrink-0 rounded-full border px-3 py-1.5 text-[0.68rem] font-semibold transition",
                   category.id === categoryId
-                    ? "border-black bg-[#fff4a8] text-black shadow-[2px_2px_0_rgba(5,5,5,0.14)]"
+                    ? "border-black bg-[#fff4a8] text-black"
                     : "border-black/20 bg-white text-black",
                 )}
                 key={category.id}

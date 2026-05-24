@@ -21,9 +21,9 @@ type MobileSignalLabel = Pick<PlanetGlobeSignal, "id" | "title"> & {
   y: number;
 };
 
-const GLOBE_RADIUS = 1.72;
-const GLOBE_Y = 0.34;
-const BASE_Y = -2.08;
+const GLOBE_RADIUS = 1.48;
+const GLOBE_Y = 0.24;
+const BASE_Y = -1.86;
 
 export function HolographicPlanetGlobe({
   emptyText,
@@ -50,7 +50,7 @@ export function HolographicPlanetGlobe({
     ).matches;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    camera.position.set(0, 0.16, 6.35);
+    camera.position.set(0, 0.16, 7.55);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({
@@ -120,7 +120,7 @@ export function HolographicPlanetGlobe({
       }),
     );
     halo.position.set(0, 0.24, -0.75);
-    halo.scale.set(5.9, 5.9, 1);
+    halo.scale.set(5.05, 5.05, 1);
     scene.add(halo);
 
     const beamMaterial = new THREE.LineBasicMaterial({
@@ -184,7 +184,7 @@ export function HolographicPlanetGlobe({
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(width, height, false);
       camera.aspect = width / Math.max(height, 1);
-      camera.position.z = camera.aspect < 0.82 ? 9.15 : 6.35;
+      camera.position.z = camera.aspect < 0.82 ? 9.6 : 7.55;
       camera.updateProjectionMatrix();
     }
 
@@ -475,7 +475,7 @@ export function HolographicPlanetGlobe({
 
       {mobileLabels.map((label) => (
         <div
-          className="pointer-events-none absolute z-20 max-w-[7.25rem] -translate-x-1/2 -translate-y-full truncate rounded-full border border-cyan-100/35 bg-slate-950/82 px-2.5 py-1 text-[0.62rem] font-black leading-none text-cyan-50 shadow-[0_0_20px_rgba(34,211,238,0.28)] backdrop-blur-md sm:hidden"
+          className="pointer-events-none absolute z-20 max-w-[7.25rem] -translate-x-1/2 -translate-y-full truncate rounded-full border border-cyan-100/35 bg-slate-950/82 px-2.5 py-1 text-[0.62rem] font-black leading-none text-cyan-50 backdrop-blur-md sm:hidden"
           key={label.id}
           style={{ left: label.x, top: label.y }}
         >
@@ -485,7 +485,7 @@ export function HolographicPlanetGlobe({
 
       {tooltip ? (
         <div
-          className="pointer-events-none absolute z-20 w-64 max-w-[calc(100%-1.5rem)] -translate-x-1/2 -translate-y-[calc(100%+0.75rem)] rounded-2xl border border-cyan-100/25 bg-slate-950/92 px-3.5 py-3 text-left shadow-2xl shadow-cyan-950/40 backdrop-blur-md"
+          className="pointer-events-none absolute z-20 w-64 max-w-[calc(100%-1.5rem)] -translate-x-1/2 -translate-y-[calc(100%+0.75rem)] rounded-2xl border border-cyan-100/25 bg-slate-950/92 px-3.5 py-3 text-left backdrop-blur-md"
           style={{ left: tooltip.x, top: tooltip.y }}
         >
           <p className="truncate text-xs font-semibold text-cyan-50">{tooltip.title}</p>

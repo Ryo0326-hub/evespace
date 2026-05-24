@@ -4,17 +4,18 @@ import { auth } from "@clerk/nextjs/server";
 import { Card } from "@/components/ui/Card";
 import { LinkButton } from "@/components/ui/Button";
 import { ShareButton } from "@/components/ui/ShareButton";
-import { EventScheduleList } from "@/components/events/EventScheduleList";
+import { OfficialEventScheduleTabs } from "@/components/events/OfficialEventScheduleTabs";
+import { OfficialEventMap } from "@/components/official-events/OfficialEventMap";
 import { MemoryCard } from "@/components/board/MemoryCard";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
-import {
-  canPostToBoard,
-  getAccessibleBoardById,
-} from "@/lib/data/boards";
+import { getAccessibleBoardById } from "@/lib/data/boards";
 import { getOfficialEventGoodsServices } from "@/lib/data/official-event-goods";
+import { getOfficialEventSponsors } from "@/lib/data/official-event-sponsors";
 import { getApprovedMemoryPostsByBoard } from "@/lib/data/memory-posts";
 import { getEventSchedules } from "@/lib/data/schedules";
-import { compactDateLocation, formatDateTime } from "@/lib/utils";
+import { getBoardTheme } from "@/lib/board-themes";
+import { readGoogleMapsBrowserApiKey } from "@/lib/maps/google-maps-config.mjs";
+import { cn } from "@/lib/utils";
 
 export default async function OfficialEventDetailPage({
   params,
@@ -32,35 +33,39 @@ export default async function OfficialEventDetailPage({
     notFound();
   }
 
-  const [schedules, goodsServices, memoryPreview, canPost, submitted] =
+  const [schedules, goodsServices, sponsors, memoryPreview, submitted] =
     await Promise.all([
       getEventSchedules(event.id),
       getOfficialEventGoodsServices(event.id),
+      getOfficialEventSponsors(event.id),
       getApprovedMemoryPostsByBoard(event.id, { limit: 3 }),
-      canPostToBoard(event, profile),
       searchParams
         ? searchParams.then((paramsValue) => paramsValue?.submitted === "1")
         : Promise.resolve(false),
     ]);
+  const heroBackground = getBoardTheme(event.boardBackgroundTheme);
+  const heroStyle = event.heroImageUrl
+    ? { backgroundImage: `url(${event.heroImageUrl})` }
+    : undefined;
 
   return (
     <main className="cosmic-bg evespace-page">
       <div className="evespace-shell max-w-6xl">
-        <nav className="flex items-center justify-start">
-          <LinkButton className="w-full sm:w-auto" href="/" variant="ghost">
-            Back to Galaxy
-          </LinkButton>
-        </nav>
-
         {submitted ? (
           <div className="rounded-3xl border border-cyan-100/25 bg-cyan-100/[0.08] px-4 py-3 text-sm font-medium text-cyan-50">
-            Your official event has been submitted. EveSpace can verify it later
-            to display the verified label.
+            Your official event has been submitted and is awaiting EveSpace
+            approval. It will not appear publicly until approved.
           </div>
         ) : null}
 
-        <header className="relative overflow-hidden rounded-[2rem] border border-cyan-100/15 bg-slate-950/72 p-5 shadow-2xl shadow-cyan-950/20 backdrop-blur sm:p-8 lg:grid lg:grid-cols-[1.25fr_0.75fr] lg:gap-8">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(103,232,249,0.16),transparent_34%),radial-gradient(circle_at_82%_12%,rgba(168,85,247,0.13),transparent_30%)]" />
+        <header
+          className={cn(
+            "official-event-hero relative overflow-hidden rounded-[2rem] border border-cyan-100/15 p-5 shadow-2xl shadow-cyan-950/20 backdrop-blur sm:p-8",
+            event.heroImageUrl ? "bg-slate-950" : heroBackground.previewClassName,
+          )}
+          style={heroStyle}
+        >
+          <div className="official-event-hero-scrim pointer-events-none absolute inset-0" />
           <div className="relative">
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full border border-cyan-100/25 bg-cyan-100/10 px-3 py-1 text-xs font-semibold text-cyan-50">
@@ -82,20 +87,13 @@ export default async function OfficialEventDetailPage({
               <LinkButton href={`/official-events/${event.id}/board`}>
                 Enter Memory Board
               </LinkButton>
-              {canPost ? (
+              {event.officialWebsiteUrl ? (
                 <LinkButton
-                  href={`/official-events/${event.id}/post`}
+                  href={event.officialWebsiteUrl}
+                  target="_blank"
+                  rel="noreferrer"
                   variant="secondary"
                 >
-                  Post a Memory
-                </LinkButton>
-              ) : !profile ? (
-                <LinkButton href="/login" variant="secondary">
-                  Sign in to Post
-                </LinkButton>
-              ) : null}
-              {event.officialWebsiteUrl ? (
-                <LinkButton href={event.officialWebsiteUrl} variant="secondary">
                   Visit event website
                 </LinkButton>
               ) : null}
@@ -105,43 +103,22 @@ export default async function OfficialEventDetailPage({
               />
             </div>
           </div>
-
-          <Card className="relative mt-6 bg-slate-950/45 lg:mt-0">
-            <p className="text-sm text-slate-400">When and where</p>
-            <p className="mt-3 text-lg font-semibold text-white">
-              {formatDateTime(event.startTime)}
-            </p>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
-              {compactDateLocation(event.startTime, event.locationName)}
-            </p>
-            {event.address ? (
-              <p className="mt-2 text-sm leading-6 text-slate-400">{event.address}</p>
-            ) : null}
-            {event.googleMapsUrl ? (
-              <a
-                className="mt-5 inline-flex text-sm font-semibold text-cyan-100 hover:text-cyan-50"
-                href={event.googleMapsUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open in Google Maps
-              </a>
-            ) : null}
-          </Card>
         </header>
 
         <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
           <div className="grid gap-6">
-            <EventScheduleList schedules={schedules} />
+            <OfficialEventScheduleTabs schedules={schedules} />
 
-            {event.accessInformation ? (
-              <Card>
-                <h2 className="evespace-card-title">Access Information</h2>
-                <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-300">
-                  {event.accessInformation}
-                </p>
-              </Card>
-            ) : null}
+            <OfficialEventMap
+              title={event.title}
+              locationName={event.locationName}
+              address={event.address}
+              googleMapsUrl={event.googleMapsUrl}
+              latitude={event.latitude}
+              longitude={event.longitude}
+              accessInformation={event.accessInformation}
+              apiKey={readGoogleMapsBrowserApiKey()}
+            />
 
             {goodsServices.length > 0 ? (
               <Card>
@@ -180,6 +157,51 @@ export default async function OfficialEventDetailPage({
                           rel="noreferrer"
                         >
                           Open link
+                        </a>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            ) : null}
+
+            {sponsors.length > 0 ? (
+              <Card>
+                <h2 className="evespace-card-title">Sponsors</h2>
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  {sponsors.map((sponsor) => (
+                    <div
+                      className="rounded-3xl border border-white/10 bg-white/[0.045] p-4"
+                      key={sponsor.id}
+                    >
+                      {sponsor.logoUrl ? (
+                        <img
+                          alt={sponsor.name}
+                          className="mb-4 aspect-video w-full rounded-2xl border border-white/10 bg-slate-950/70 object-contain p-3"
+                          src={sponsor.logoUrl}
+                        />
+                      ) : null}
+                      <div className="flex items-start justify-between gap-3">
+                        <h3 className="text-base font-semibold text-white">{sponsor.name}</h3>
+                        {sponsor.tier ? (
+                          <span className="rounded-full border border-cyan-100/20 bg-cyan-100/10 px-2.5 py-1 text-xs font-semibold text-cyan-50">
+                            {sponsor.tier}
+                          </span>
+                        ) : null}
+                      </div>
+                      {sponsor.description ? (
+                        <p className="mt-3 text-sm leading-6 text-slate-300">
+                          {sponsor.description}
+                        </p>
+                      ) : null}
+                      {sponsor.websiteUrl ? (
+                        <a
+                          className="mt-4 inline-flex text-sm font-semibold text-cyan-100 hover:text-cyan-50"
+                          href={sponsor.websiteUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Visit sponsor
                         </a>
                       ) : null}
                     </div>

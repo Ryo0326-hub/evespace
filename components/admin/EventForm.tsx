@@ -127,7 +127,7 @@ export function EventForm({
         ) : null}
 
         <div className="grid gap-5 md:grid-cols-2">
-          <Field label="Board background theme">
+          <Field label="Banner theme">
             <Select
               name="boardBackgroundTheme"
               defaultValue={event?.boardBackgroundTheme ?? DEFAULT_BOARD_THEME}
@@ -151,6 +151,58 @@ export function EventForm({
               ))}
             </Select>
           </Field>
+        </div>
+
+        <div className="grid gap-4 rounded-3xl border border-white/10 bg-white/[0.045] p-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {BOARD_THEME_OPTIONS.map((theme) => {
+              const background = getBoardTheme(theme);
+
+              return (
+                <div key={theme}>
+                  <div
+                    className={[
+                      "aspect-[16/7] rounded-2xl border border-white/10",
+                      background.previewClassName,
+                    ].join(" ")}
+                  />
+                  <p className="mt-2 text-xs font-semibold text-slate-300">
+                    {background.label}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+          {event?.heroImageUrl ? (
+            <div>
+              <p className="mb-2 text-sm font-semibold text-cyan-50">
+                Current uploaded banner
+              </p>
+              <div
+                aria-label={`${event.title} banner`}
+                className="aspect-[16/5] rounded-3xl border border-white/10 bg-cover bg-center"
+                role="img"
+                style={{ backgroundImage: `url(${event.heroImageUrl})` }}
+              />
+            </div>
+          ) : null}
+          <Field label="Upload banner image" hint="JPG, PNG, or WebP under 5 MB">
+            <Input
+              accept="image/jpeg,image/png,image/webp"
+              name="heroImage"
+              type="file"
+            />
+          </Field>
+          {event?.heroImageUrl ? (
+            <label className="flex items-center gap-3 text-sm text-slate-200">
+              <input
+                name="clearHeroImage"
+                type="checkbox"
+                className="size-4 rounded border-white/20 bg-white/10"
+              />
+              Clear uploaded banner image
+            </label>
+          ) : null}
         </div>
 
         <Field label="Goods description">

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { sharingScopeLabel } from "@/lib/boards/labels";
+import { getGalaxySearchSuggestions } from "@/lib/galaxy/search-utils.mjs";
 import { compactDateLocation } from "@/lib/utils";
 import type { Event } from "@/types/evespace";
 
@@ -20,28 +21,7 @@ export function GalaxySearch({
   const [activeIndex, setActiveIndex] = useState(0);
 
   const suggestions = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-
-    if (!normalized) {
-      return events;
-    }
-
-    return events
-      .filter((event) => {
-        const searchable = [
-          event.title,
-          event.category,
-          event.locationName,
-          event.address,
-          event.startTime,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-
-        return searchable.includes(normalized);
-      })
-      .slice(0, 5);
+    return getGalaxySearchSuggestions(events, query) as Event[];
   }, [events, query]);
 
   return (
@@ -86,8 +66,8 @@ export function GalaxySearch({
           className="w-full bg-transparent text-base text-white outline-none placeholder:text-slate-400"
           placeholder={
             personalized
-              ? "Search official, personal, and friends' boards..."
-              : "Search official events in the galaxy..."
+              ? "Search boards by event, place, or creator..."
+              : "Search official events by event, place, or creator..."
           }
           autoComplete="off"
         />

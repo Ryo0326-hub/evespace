@@ -37,9 +37,6 @@ export default async function ExplorePage(props: {
           <p className="evespace-kicker">
             Explore
           </p>
-          <h1 className="evespace-page-title">
-            Find your circle
-          </h1>
         </header>
 
         <SearchBar />

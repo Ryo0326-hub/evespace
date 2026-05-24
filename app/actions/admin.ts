@@ -1,13 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requirePlatformAdmin } from "@/lib/auth/permissions";
+import { requireSiteOwner } from "@/lib/auth/site-owner";
 import { getBoardById } from "@/lib/data/boards";
 import { createFriendBoardCreatedNotifications } from "@/lib/data/notifications";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export async function verifyEventAction(eventId: string) {
-  const profile = await requirePlatformAdmin();
+  const profile = await requireSiteOwner();
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
@@ -34,7 +34,8 @@ export async function verifyEventAction(eventId: string) {
   }
 
   revalidatePath("/");
-  revalidatePath("/");
+  revalidatePath("/explore");
+  revalidatePath("/dashboard");
   revalidatePath("/admin/official-events");
   revalidatePath("/admin/verification");
   revalidatePath("/notifications");
@@ -42,7 +43,7 @@ export async function verifyEventAction(eventId: string) {
 }
 
 export async function rejectEventVerificationAction(eventId: string, notes: string) {
-  const profile = await requirePlatformAdmin();
+  const profile = await requireSiteOwner();
   const supabase = getSupabaseAdminClient();
 
   if (!supabase) {
@@ -64,6 +65,9 @@ export async function rejectEventVerificationAction(eventId: string, notes: stri
     throw new Error(error.message);
   }
 
+  revalidatePath("/");
+  revalidatePath("/explore");
+  revalidatePath("/dashboard");
   revalidatePath("/admin/official-events");
   revalidatePath("/admin/verification");
   revalidatePath(`/official-events/${eventId}`);

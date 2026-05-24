@@ -6,7 +6,7 @@ const labels: Record<VerificationStatus, string> = {
   verified: "Verified Event",
   pending_review: "Verification Pending",
   unverified: "Unverified Event",
-  rejected: "Unverified Event",
+  rejected: "Rejected Event",
 };
 
 const styles: Record<VerificationStatus, string> = {
@@ -14,7 +14,7 @@ const styles: Record<VerificationStatus, string> = {
   verified: "border-emerald-200/40 bg-emerald-300/15 text-emerald-100",
   pending_review: "border-cyan-200/40 bg-cyan-300/15 text-cyan-100",
   unverified: "border-amber-200/40 bg-amber-300/15 text-amber-100",
-  rejected: "border-amber-200/40 bg-amber-300/15 text-amber-100",
+  rejected: "border-rose-200/40 bg-rose-300/15 text-rose-100",
 };
 
 export function EventVerificationBadge({
@@ -42,6 +42,10 @@ function getDescription(status: VerificationStatus) {
 
   if (status === "pending_review") {
     return "The organizer has submitted this event for review.";
+  }
+
+  if (status === "rejected") {
+    return "This event was reviewed and rejected by Evespace.";
   }
 
   return "This event has not yet been verified.";

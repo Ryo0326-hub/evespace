@@ -25,10 +25,10 @@ function MemoryPostSubmitButton({
   return (
     <Button
       className={cn(
-        "w-full border-cyan-100/60 bg-cyan-100 text-slate-950 shadow-[0_0_24px_rgba(103,232,249,0.28)] hover:border-white/80 hover:bg-white hover:text-slate-950 sm:w-auto",
+        "w-full border-cyan-100/60 bg-cyan-100 text-slate-950 shadow-none hover:border-white/80 hover:bg-white hover:text-slate-950 sm:w-auto",
         !fileSelected &&
           !busy &&
-          "border-cyan-100/20 bg-cyan-100/[0.08] text-cyan-50 shadow-none hover:border-cyan-100/20 hover:bg-cyan-100/[0.08] hover:text-cyan-50 disabled:opacity-100",
+          "border-cyan-100/20 bg-cyan-100/[0.08] text-cyan-50 hover:border-cyan-100/20 hover:bg-cyan-100/[0.08] hover:text-cyan-50 disabled:opacity-100",
         busy &&
           "cursor-wait border-slate-500 bg-slate-500 text-white hover:border-slate-500 hover:bg-slate-500",
       )}
@@ -128,7 +128,7 @@ export function MemoryPostForm({
 
   return (
     <div className="w-full max-w-3xl min-w-0 overflow-hidden">
-      <Card className="w-full min-w-0 overflow-hidden p-4 max-[360px]:p-3 sm:p-5">
+      <Card className="w-full min-w-0 overflow-hidden p-4 shadow-none max-[360px]:p-3 sm:p-5">
         <form action={action} className="grid gap-6" onSubmit={handleSubmit} ref={formRef}>
           <Field label="Upload photo" hint="JPG, PNG, or WebP. Max 5MB.">
             <Input

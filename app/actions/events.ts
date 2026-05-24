@@ -3,7 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireBoardAdmin, requirePlatformAdmin } from "@/lib/auth/permissions";
-import { createEvent, getManagedEvents, updateEvent } from "@/lib/data/events";
+import {
+  createEvent,
+  getEventById,
+  getManagedEvents,
+  updateEvent,
+} from "@/lib/data/events";
+import {
+  removeOfficialEventHeroImage,
+  uploadOfficialEventHeroImage,
+} from "@/lib/data/official-event-hero-images";
 import {
   createBoardCreatedNotification,
   createFriendBoardCreatedNotifications,
@@ -11,6 +20,7 @@ import {
 } from "@/lib/data/notifications";
 import { replaceScheduleItems, upsertScheduleItems } from "@/lib/data/schedules";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
+import { resolveEventLocationInput } from "@/lib/maps/event-location";
 import { generateStarCoordinate, slugify } from "@/lib/utils";
 import { getPlanetLevelUp } from "@/lib/planet/planet-levels";
 import { DEFAULT_BOARD_THEME, toBoardThemeId } from "@/lib/board-themes";
@@ -25,7 +35,25 @@ export async function createEventAction(formData: FormData) {
   const profile = await requirePlatformAdmin();
 
   const previousEventCount = (await getManagedEvents(profile)).length;
-  const input = readEventInput(formData);
+  const baseInput = readEventInput(formData);
+  let heroImage: Awaited<ReturnType<typeof uploadOfficialEventHeroImage>>;
+
+  try {
+    heroImage = await uploadOfficialEventHeroImage({
+      eventKey: baseInput.slug,
+      file: formData.get("heroImage"),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Banner image upload failed.";
+    redirect(`/admin/official-events/new?error=${encodeURIComponent(message)}`);
+  }
+
+  const input = await resolveEventLocationInput({
+    ...baseInput,
+    heroImageUrl: heroImage?.publicUrl,
+    heroImageStorageBucket: heroImage?.storageBucket,
+    heroImageStoragePath: heroImage?.storagePath,
+  });
   const result = await createEvent(input, profile);
 
   if (result.data) {
@@ -46,6 +74,13 @@ export async function createEventAction(formData: FormData) {
     redirect(`/admin/official-events/${result.data.id}/edit`);
   }
 
+  if (heroImage) {
+    await removeOfficialEventHeroImage({
+      storageBucket: heroImage.storageBucket,
+      storagePath: heroImage.storagePath,
+    });
+  }
+
   redirect(
     `/admin/official-events/new?error=${encodeURIComponent(
       result.error ?? "Save failed",
@@ -57,16 +92,66 @@ export async function updateEventAction(formData: FormData) {
   const eventId = String(formData.get("eventId") ?? "");
   await requireBoardAdmin(eventId);
 
-  const input = readEventInput(formData);
+  const existingEvent = await getEventById(eventId);
+
+  if (!existingEvent) {
+    redirect(`/admin/official-events/${eventId}/edit?error=${encodeURIComponent("Event not found")}`);
+  }
+
+  const baseInput = readEventInput(formData);
+  let heroImage: Awaited<ReturnType<typeof uploadOfficialEventHeroImage>>;
+
+  try {
+    heroImage = await uploadOfficialEventHeroImage({
+      eventKey: baseInput.slug || eventId,
+      file: formData.get("heroImage"),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Banner image upload failed.";
+    redirect(`/admin/official-events/${eventId}/edit?error=${encodeURIComponent(message)}`);
+  }
+
+  const clearHeroImage = formData.get("clearHeroImage") === "on" && !heroImage;
+  const input = await resolveEventLocationInput({
+    ...baseInput,
+    ...(heroImage
+      ? {
+          heroImageUrl: heroImage.publicUrl,
+          heroImageStorageBucket: heroImage.storageBucket,
+          heroImageStoragePath: heroImage.storagePath,
+        }
+      : clearHeroImage
+        ? {
+            heroImageUrl: null,
+            heroImageStorageBucket: null,
+            heroImageStoragePath: null,
+          }
+        : {}),
+  });
   const result = await updateEvent(eventId, input);
 
   if (result.data) {
+    if ((heroImage || clearHeroImage) && existingEvent.heroImageStoragePath) {
+      await removeOfficialEventHeroImage({
+        storageBucket: existingEvent.heroImageStorageBucket,
+        storagePath: existingEvent.heroImageStoragePath,
+      });
+    }
+
     await replaceScheduleItems(eventId, readScheduleText(formData));
     revalidatePath("/");
     revalidatePath("/dashboard");
     revalidatePath("/admin/official-events");
     revalidatePath(`/events/${result.data.slug}`);
+    revalidatePath(`/official-events/${result.data.id}`);
     redirect(`/admin/official-events/${eventId}/edit?saved=1`);
+  }
+
+  if (heroImage) {
+    await removeOfficialEventHeroImage({
+      storageBucket: heroImage.storageBucket,
+      storagePath: heroImage.storagePath,
+    });
   }
 
   redirect(
