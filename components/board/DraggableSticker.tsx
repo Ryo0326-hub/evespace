@@ -188,7 +188,7 @@ export function DraggableSticker({
       {onDelete ? (
         <button
           aria-label="Delete sticker"
-          className={`absolute -right-2 -top-2 grid size-7 place-items-center rounded-full border border-black bg-white text-sm font-black leading-none text-black shadow-lg transition ${
+          className={`absolute -right-2 -top-2 grid size-7 place-items-center rounded-full border border-black bg-white text-sm font-black leading-none text-black transition ${
             showDelete ? "opacity-100 sm:opacity-0" : "opacity-0"
           } sm:group-hover:opacity-100`}
           onClick={(event) => {

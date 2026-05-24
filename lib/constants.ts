@@ -52,4 +52,8 @@ export const memoryPostMediaBucket = "memory-post-media";
 
 export const legacyMemoryPhotoBucket = "memory-photos";
 
+export const eventSponsorLogosBucket = "event-sponsor-logos";
+
+export const eventCoversBucket = "event-covers";
+
 export const memoryPostPageSize = 30;

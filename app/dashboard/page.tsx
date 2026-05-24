@@ -1,7 +1,11 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
-import { getFriendBoards, getOwnedPrivateBoards } from "@/lib/data/boards";
+import {
+  getFriendBoards,
+  getOwnedOfficialBoards,
+  getOwnedPrivateBoards,
+} from "@/lib/data/boards";
 import {
   getFollowerProfiles,
   getFollowingProfiles,
@@ -28,10 +32,17 @@ export default async function DashboardPage({
   }
 
   const peopleMode = readPeopleMode((await searchParams)?.people);
-  const [myBoards, friendBoards, followCounts, followingProfiles, followerProfiles] =
-    await Promise.all([
+  const [
+    myBoards,
+    friendBoards,
+    officialSites,
+    followCounts,
+    followingProfiles,
+    followerProfiles,
+  ] = await Promise.all([
     getOwnedPrivateBoards(profile.clerkUserId),
     getFriendBoards(profile),
+    getOwnedOfficialBoards(profile),
     getFollowCounts(profile.id),
     getFollowingProfiles(profile.id),
     getFollowerProfiles(profile.id),
@@ -45,9 +56,6 @@ export default async function DashboardPage({
             <p className="evespace-kicker">
               Dashboard
             </p>
-            <h1 className="evespace-page-title">
-              Your Memory Space
-            </h1>
             <div className="mt-4 flex flex-wrap gap-2">
               <FollowStatLink
                 active={peopleMode === "following"}
@@ -124,6 +132,36 @@ export default async function DashboardPage({
               </LinkButton>
             </div>
             <FriendsBoardsFeed boards={friendBoards} />
+          </section>
+
+          <section className="evespace-section">
+            <div className="evespace-section-header">
+              <h2 className="evespace-section-title">Official Sites</h2>
+              <LinkButton
+                className="memory-board-soft-button"
+                href="/official-events/new"
+                variant="ghost"
+              >
+                Host Event
+              </LinkButton>
+            </div>
+            {officialSites.length === 0 ? (
+              <EmptyState
+                title="No official sites yet."
+                description="Hosted official event pages you submit for EveSpace approval will appear here."
+              />
+            ) : (
+              <div className="grid gap-4">
+                {officialSites.map((board) => (
+                  <DashboardBoardCard
+                    board={board}
+                    canDelete
+                    canEdit={false}
+                    key={board.id}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         </div>
       </div>

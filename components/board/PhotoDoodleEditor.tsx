@@ -385,7 +385,7 @@ export const PhotoDoodleEditor = forwardRef<
 
   return (
     <section className="grid min-w-0 gap-3">
-      <article className="min-w-0 overflow-hidden rounded-2xl border-2 border-black bg-white p-3 text-black shadow-sm sm:p-4">
+      <article className="min-w-0 overflow-hidden rounded-2xl border-2 border-black bg-white p-3 text-black sm:p-4">
         <header className="flex min-h-12 items-center justify-between gap-3 px-1 pb-3">
           <div className="min-w-0">
             <p className="truncate text-xs font-semibold uppercase tracking-[0.2em] text-slate-700">
@@ -427,7 +427,7 @@ export const PhotoDoodleEditor = forwardRef<
         </div>
       </article>
 
-      <div className="grid min-w-0 gap-3 overflow-hidden rounded-3xl border border-white/10 bg-slate-950/55 p-2.5 shadow-2xl shadow-black/25 sm:p-4">
+      <div className="grid min-w-0 gap-3 overflow-hidden rounded-3xl border border-white/10 bg-slate-950/55 p-2.5 sm:p-4">
         <div
           className="flex min-w-0 flex-wrap items-center gap-2 max-[360px]:gap-1.5"
           role="radiogroup"

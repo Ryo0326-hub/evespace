@@ -32,13 +32,9 @@ export default async function NewHostedOfficialEventPage({
             <p className="evespace-kicker">
               Host an official event
             </p>
-            <h1 className="evespace-page-title mt-4">
-              Broadcast an event star.
-            </h1>
-            <p className="mt-5 text-sm leading-7 text-slate-300 sm:text-base">
+            <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
               Create a public event page for an organization, school event,
-              festival, meetup, or large gathering. EveSpace can verify official
-              events later so they display a verified label in search.
+              festival, meetup, or large gathering.
             </p>
           </div>
         </header>

@@ -30,9 +30,6 @@ export default async function NotificationsPage() {
           <p className="evespace-kicker">
             Notifications
           </p>
-          <h1 className="evespace-page-title">
-            Latest updates
-          </h1>
         </header>
 
         {notifications.length === 0 ? (

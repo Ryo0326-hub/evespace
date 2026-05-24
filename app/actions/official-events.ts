@@ -3,10 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
-import { createOfficialBoard } from "@/lib/data/boards";
+import {
+  createOfficialBoard,
+  deleteBoard,
+  getBoardById,
+} from "@/lib/data/boards";
+import {
+  removeOfficialEventHeroImage,
+  uploadOfficialEventHeroImage,
+} from "@/lib/data/official-event-hero-images";
 import { replaceOfficialEventGoodsServices } from "@/lib/data/official-event-goods";
+import { replaceOfficialEventSponsors } from "@/lib/data/official-event-sponsors";
 import { upsertScheduleItems } from "@/lib/data/schedules";
-import { DEFAULT_BOARD_THEME } from "@/lib/board-themes";
+import { DEFAULT_BOARD_THEME, toBoardThemeId } from "@/lib/board-themes";
+import { resolveEventLocationInput } from "@/lib/maps/event-location";
 import { slugify } from "@/lib/utils";
 import type {
   BoardBackgroundTheme,
@@ -25,26 +35,56 @@ export async function createHostedOfficialEventAction(formData: FormData) {
   const input = readHostedOfficialEventInput(formData);
   const scheduleItems = readScheduleItems(formData);
   let goodsServices: ReturnType<typeof readGoodsServices>;
+  let sponsors: ReturnType<typeof readSponsors>;
 
   try {
     goodsServices = readGoodsServices(formData);
+    sponsors = readSponsors(formData);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Invalid goods/services.";
+    const message = error instanceof Error ? error.message : "Invalid event details.";
     redirect(`/official-events/new?error=${encodeURIComponent(message)}`);
   }
 
   const validationError =
     validateOfficialEventInput(input) ??
     validateScheduleItems(scheduleItems) ??
-    validateGoodsServices(goodsServices);
+    validateGoodsServices(goodsServices) ??
+    validateSponsors(sponsors);
 
   if (validationError) {
     redirect(`/official-events/new?error=${encodeURIComponent(validationError)}`);
   }
 
-  const result = await createOfficialBoard(input, profile);
+  let heroImage: Awaited<ReturnType<typeof uploadOfficialEventHeroImage>>;
+
+  try {
+    heroImage = await uploadOfficialEventHeroImage({
+      eventKey: input.slug,
+      file: formData.get("heroImage"),
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Banner image upload failed.";
+    redirect(`/official-events/new?error=${encodeURIComponent(message)}`);
+  }
+
+  const result = await createOfficialBoard(
+    await resolveEventLocationInput({
+      ...input,
+      heroImageUrl: heroImage?.publicUrl,
+      heroImageStorageBucket: heroImage?.storageBucket,
+      heroImageStoragePath: heroImage?.storagePath,
+    }),
+    profile,
+  );
 
   if (!result.data) {
+    if (heroImage) {
+      await removeOfficialEventHeroImage({
+        storageBucket: heroImage.storageBucket,
+        storagePath: heroImage.storagePath,
+      });
+    }
+
     redirect(
       `/official-events/new?error=${encodeURIComponent(
         result.error ?? "Save failed",
@@ -54,12 +94,45 @@ export async function createHostedOfficialEventAction(formData: FormData) {
 
   await upsertScheduleItems(result.data.id, scheduleItems);
   await replaceOfficialEventGoodsServices(result.data.id, goodsServices);
+  await replaceOfficialEventSponsors(result.data.id, sponsors);
 
   revalidatePath("/");
   revalidatePath("/dashboard");
   revalidatePath("/admin/official-events");
   revalidatePath("/admin/verification");
   redirect(`/official-events/${result.data.id}?submitted=1`);
+}
+
+export async function deleteHostedOfficialEventAction(formData: FormData) {
+  const profile = await ensureUserProfile();
+
+  if (!profile) {
+    redirect("/login");
+  }
+
+  const boardId = String(formData.get("boardId") ?? "");
+  const board = await getBoardById(boardId);
+  const isOwner =
+    board?.ownerProfileId === profile.id || board?.ownerClerkUserId === profile.clerkUserId;
+
+  if (!board || board.boardType !== "official_event" || !isOwner) {
+    throw new Error("You cannot delete this official event page.");
+  }
+
+  const result = await deleteBoard(board.id);
+
+  if (result.error) {
+    throw new Error(result.error);
+  }
+
+  revalidatePath("/");
+  revalidatePath("/explore");
+  revalidatePath("/dashboard");
+  revalidatePath("/admin/official-events");
+  revalidatePath("/admin/verification");
+  revalidatePath(`/official-events/${board.id}`);
+  revalidatePath(`/events/${board.slug}`);
+  redirect("/dashboard");
 }
 
 function readHostedOfficialEventInput(formData: FormData): EventInput {
@@ -76,7 +149,7 @@ function readHostedOfficialEventInput(formData: FormData): EventInput {
     googleMapsUrl: clean(formData.get("googleMapsUrl")),
     officialWebsiteUrl: clean(formData.get("officialWebsiteUrl")),
     accessInformation: clean(formData.get("accessInformation")),
-    boardBackgroundTheme: readBoardTheme(),
+    boardBackgroundTheme: readBoardTheme(formData),
     moderationMode: "post_first",
     visibility: "public",
     sharingScope: "public",
@@ -195,6 +268,24 @@ function validateGoodsServices(items: ReturnType<typeof readGoodsServices>) {
   return null;
 }
 
+function validateSponsors(items: ReturnType<typeof readSponsors>) {
+  for (const item of items) {
+    if (item.name.length > 150) {
+      return "Sponsor names must be 150 characters or fewer.";
+    }
+
+    if ((item.description?.length ?? 0) > 1000) {
+      return "Sponsor descriptions must be 1000 characters or fewer.";
+    }
+
+    if ((item.tier?.length ?? 0) > 80) {
+      return "Sponsor tiers must be 80 characters or fewer.";
+    }
+  }
+
+  return null;
+}
+
 function readScheduleItems(formData: FormData) {
   const titles = formData.getAll("scheduleTitle");
   const descriptions = formData.getAll("scheduleDescription");
@@ -256,6 +347,40 @@ function readGoodsServices(formData: FormData) {
   });
 }
 
+function readSponsors(formData: FormData) {
+  const names = formData.getAll("sponsorName");
+  const descriptions = formData.getAll("sponsorDescription");
+  const tiers = formData.getAll("sponsorTier");
+  const logoUrls = formData.getAll("sponsorLogoUrl");
+  const websiteUrls = formData.getAll("sponsorWebsiteUrl");
+
+  return names.flatMap((rawName, index) => {
+    const name = clean(rawName);
+
+    if (!name) {
+      return [];
+    }
+
+    const logoUrl = clean(logoUrls[index] ?? null);
+    const websiteUrl = clean(websiteUrls[index] ?? null);
+
+    if ((logoUrl && !isValidUrl(logoUrl)) || (websiteUrl && !isValidUrl(websiteUrl))) {
+      throw new Error("Sponsor links must be valid URLs.");
+    }
+
+    return [
+      {
+        name,
+        description: clean(descriptions[index] ?? null),
+        tier: clean(tiers[index] ?? null),
+        logoUrl,
+        websiteUrl,
+        sortOrder: index,
+      },
+    ];
+  });
+}
+
 function readOfficialSharingScope(formData: FormData): OfficialEventSharingScope {
   const value = String(formData.get("officialSharingScope") ?? "public");
 
@@ -272,8 +397,10 @@ function readPostingPermission(formData: FormData): OfficialEventPostingPermissi
     : "signed_in_users";
 }
 
-function readBoardTheme(): BoardBackgroundTheme {
-  return DEFAULT_BOARD_THEME;
+function readBoardTheme(formData: FormData): BoardBackgroundTheme {
+  return toBoardThemeId(
+    String(formData.get("boardBackgroundTheme") ?? DEFAULT_BOARD_THEME),
+  );
 }
 
 function readLines(value: FormDataEntryValue | null) {

@@ -7,12 +7,12 @@ import { EventVerificationBadge } from "@/components/events/EventVerificationBad
 import { Button, LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { requirePlatformAdmin } from "@/lib/auth/permissions";
+import { requireSiteOwner } from "@/lib/auth/site-owner";
 import { getPendingOfficialBoards } from "@/lib/data/boards";
 
 export default async function AdminVerificationPage() {
   try {
-    await requirePlatformAdmin();
+    await requireSiteOwner();
   } catch {
     redirect("/dashboard");
   }
@@ -53,7 +53,7 @@ export default async function AdminVerificationPage() {
                       {board.description ?? "No description provided."}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      <LinkButton href={`/admin/official-events/${board.id}/edit`} variant="secondary">
+                      <LinkButton href={`/official-events/${board.id}`} variant="secondary">
                         Review Details
                       </LinkButton>
                     </div>

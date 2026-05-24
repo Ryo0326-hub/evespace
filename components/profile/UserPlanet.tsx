@@ -32,7 +32,7 @@ export function UserPlanet({
 
   return (
     <div className="mx-auto w-full max-w-7xl">
-      <section className="relative isolate overflow-hidden rounded-[1.75rem] border border-cyan-100/15 bg-slate-950/70 px-4 py-6 shadow-2xl shadow-cyan-950/20 backdrop-blur-xl sm:px-6 sm:py-8 lg:px-9">
+      <section className="relative isolate overflow-hidden rounded-[1.75rem] border border-cyan-100/15 bg-slate-950/70 px-4 py-6 backdrop-blur-xl sm:px-6 sm:py-8 lg:px-9">
         <div className="relative grid gap-8 lg:grid-cols-[minmax(0,0.82fr)_minmax(20rem,1.18fr)] lg:items-center">
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-4">
@@ -56,7 +56,7 @@ export function UserPlanet({
             {actionSlot ? <div className="mt-7">{actionSlot}</div> : null}
             {isSelf ? (
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <LinkButton className="w-full sm:w-auto" href="/dashboard">
+                <LinkButton className="w-full shadow-none sm:w-auto" href="/dashboard">
                   Open Dashboard
                 </LinkButton>
               </div>
@@ -64,7 +64,7 @@ export function UserPlanet({
           </div>
 
           <div className="relative mx-auto w-full max-w-[35rem]">
-            <div className="overflow-hidden rounded-[1.5rem] border border-cyan-100/15 bg-slate-950/55 shadow-xl shadow-black/20">
+            <div className="overflow-hidden rounded-[1.5rem] border border-cyan-100/15 bg-slate-950/55">
               <div className="grid gap-3 border-b border-white/10 px-4 py-3 sm:px-5">
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
@@ -83,7 +83,7 @@ export function UserPlanet({
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-white/10">
                   <div
-                    className="h-full rounded-full bg-cyan-200 shadow-[0_0_18px_rgba(103,232,249,0.7)]"
+                    className="h-full rounded-full bg-cyan-200"
                     style={{ width: `${planetLevel.progress}%` }}
                   />
                 </div>
@@ -108,7 +108,7 @@ function ProfileAvatar({ profile }: { profile: Profile }) {
     return (
       <Image
         alt={`${label} avatar`}
-        className="size-16 shrink-0 rounded-full border border-cyan-100/30 object-cover shadow-[0_0_28px_rgba(34,211,238,0.22)]"
+        className="size-16 shrink-0 rounded-full border border-cyan-100/30 object-cover"
         height={64}
         src={profile.avatarUrl}
         unoptimized
@@ -118,7 +118,7 @@ function ProfileAvatar({ profile }: { profile: Profile }) {
   }
 
   return (
-    <div className="flex size-16 shrink-0 items-center justify-center rounded-full border border-cyan-100/30 bg-cyan-100/10 text-2xl font-semibold text-cyan-100 shadow-[0_0_28px_rgba(34,211,238,0.22)]">
+    <div className="flex size-16 shrink-0 items-center justify-center rounded-full border border-cyan-100/30 bg-cyan-100/10 text-2xl font-semibold text-cyan-100">
       {label.slice(0, 1)}
     </div>
   );

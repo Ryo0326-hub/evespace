@@ -1,4 +1,6 @@
 import { mapBoard } from "@/lib/data/mappers";
+import { canReviewOfficialEvents } from "@/lib/auth/site-owner";
+import { isPublicOfficialEventStatus } from "@/lib/official-events/approval-utils.mjs";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { DEFAULT_BOARD_THEME } from "@/lib/board-themes";
@@ -25,7 +27,7 @@ export async function getPublicOfficialBoards(): Promise<Board[]> {
     .eq("board_type", "official_event")
     .eq("visibility", "public")
     .eq("official_sharing_scope", "public")
-    .in("verification_status", ["unverified", "pending_review", "verified"])
+    .eq("verification_status", "verified")
     .order("start_time", { ascending: true, nullsFirst: false });
 
   if (error) {
@@ -173,12 +175,16 @@ export async function canViewOfficialEventBoard(
   board: Board,
   profile: Profile | null,
 ) {
-  if (board.boardType !== "official_event" || board.verificationStatus === "rejected") {
+  if (board.boardType !== "official_event") {
     return false;
   }
 
-  if (await canManageBoard(board.id, profile)) {
+  if ((await canManageBoard(board.id, profile)) || canReviewOfficialEvents(profile)) {
     return true;
+  }
+
+  if (!isPublicOfficialEventStatus(board.verificationStatus)) {
+    return false;
   }
 
   if (board.officialSharingScope === "public") {
@@ -273,6 +279,28 @@ export async function getOwnedPrivateBoards(clerkUserId: string): Promise<Board[
 
   if (error) {
     logBoardDataError("Failed to load owned boards", error);
+    return [];
+  }
+
+  return data.map(mapBoard);
+}
+
+export async function getOwnedOfficialBoards(profile: Profile): Promise<Board[]> {
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("boards")
+    .select(BOARD_SELECT)
+    .eq("board_type", "official_event")
+    .or(`owner_profile_id.eq.${profile.id},owner_clerk_user_id.eq.${profile.clerkUserId}`)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    logBoardDataError("Failed to load owned official boards", error);
     return [];
   }
 
@@ -380,7 +408,7 @@ export async function getAccessibleOfficialBoardsForProfile(
     .select(BOARD_SELECT)
     .eq("board_type", "official_event")
     .eq("visibility", "public")
-    .in("verification_status", ["unverified", "pending_review", "verified"])
+    .eq("verification_status", "verified")
     .order("start_time", { ascending: true, nullsFirst: false });
 
   if (error) {
@@ -523,6 +551,18 @@ export async function updateBoard(boardId: string, input: BoardInput) {
     updatePayload.official_access_information = input.accessInformation ?? null;
   }
 
+  if (input.heroImageUrl !== undefined) {
+    updatePayload.hero_image_url = input.heroImageUrl ?? null;
+  }
+
+  if (input.heroImageStorageBucket !== undefined) {
+    updatePayload.hero_image_storage_bucket = input.heroImageStorageBucket ?? null;
+  }
+
+  if (input.heroImageStoragePath !== undefined) {
+    updatePayload.hero_image_storage_path = input.heroImageStoragePath ?? null;
+  }
+
   if (input.officialSharingScope !== undefined) {
     updatePayload.official_sharing_scope = input.officialSharingScope;
   }
@@ -620,6 +660,9 @@ async function createBoard({
       google_maps_url: input.googleMapsUrl ?? null,
       latitude: input.latitude ?? null,
       longitude: input.longitude ?? null,
+      hero_image_url: input.heroImageUrl ?? null,
+      hero_image_storage_bucket: input.heroImageStorageBucket ?? null,
+      hero_image_storage_path: input.heroImageStoragePath ?? null,
       selling_goods: input.sellingGoods ?? false,
       goods_description: input.goodsDescription ?? null,
       board_background_theme: input.boardBackgroundTheme ?? DEFAULT_BOARD_THEME,
