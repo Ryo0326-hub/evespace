@@ -32,11 +32,21 @@ APP_BASE_URL=
 GOOGLE_MAPS_API_KEY=
 GOOGLE_MAPS_SERVER_API_KEY=
 NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PREMIUM_PRODUCT_ID=prod_Ua1oHeg7OqxBZD
+STRIPE_PREMIUM_CURRENCY=cad
+STRIPE_PREMIUM_MONTHLY_AMOUNT=500
 ```
 
 Without Supabase configuration, the public app falls back to mock events and memories so the visual prototype remains usable.
 
 Use `GOOGLE_MAPS_API_KEY` or `GOOGLE_MAPS_SERVER_API_KEY` for a single Maps Platform key. For stricter production restrictions, you can instead split it into `GOOGLE_MAPS_SERVER_API_KEY` for Geocoding and `NEXT_PUBLIC_GOOGLE_MAPS_BROWSER_API_KEY` for Maps JavaScript and Routes.
+
+Stripe Premium uses hosted Checkout subscriptions. Configure the sandbox
+secret key in `STRIPE_SECRET_KEY`, point Stripe webhooks to
+`/api/stripe/webhook`, and set `STRIPE_WEBHOOK_SECRET` from the webhook signing
+secret. The default premium product is `prod_Ua1oHeg7OqxBZD` at CAD $5/month.
 
 ## Database
 

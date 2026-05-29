@@ -27,7 +27,7 @@ export async function getPublicOfficialBoards(): Promise<Board[]> {
     .eq("board_type", "official_event")
     .eq("visibility", "public")
     .eq("official_sharing_scope", "public")
-    .eq("verification_status", "verified")
+    .neq("verification_status", "rejected")
     .order("start_time", { ascending: true, nullsFirst: false });
 
   if (error) {
@@ -82,7 +82,7 @@ export async function getOfficialBoardBySlug(slug: string): Promise<Board | null
     .eq("slug", slug)
     .eq("board_type", "official_event")
     .eq("visibility", "public")
-    .eq("verification_status", "verified")
+    .neq("verification_status", "rejected")
     .maybeSingle();
 
   if (error) {
@@ -408,7 +408,7 @@ export async function getAccessibleOfficialBoardsForProfile(
     .select(BOARD_SELECT)
     .eq("board_type", "official_event")
     .eq("visibility", "public")
-    .eq("verification_status", "verified")
+    .neq("verification_status", "rejected")
     .order("start_time", { ascending: true, nullsFirst: false });
 
   if (error) {

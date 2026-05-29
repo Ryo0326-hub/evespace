@@ -51,12 +51,14 @@ function getDropCard(clientX: number, clientY: number) {
 
 export function InteractiveMemoryBoard({
   boardId,
+  canUsePremiumStickers,
   posts,
   returnPath,
   themeClassName,
   viewerProfileId,
 }: {
   boardId: string;
+  canUsePremiumStickers: boolean;
   posts: MemoryPost[];
   returnPath: string;
   themeClassName?: string;
@@ -110,12 +112,16 @@ export function InteractiveMemoryBoard({
       return "Sign in to add stickers on your memories.";
     }
 
+    if (!canUsePremiumStickers) {
+      return "EveSpace Premium is required to add and move stickers.";
+    }
+
     if (!firstOwnedPostId) {
       return "Stickers only go on memories you posted. Post one first.";
     }
 
     return undefined;
-  }, [viewerProfileId, firstOwnedPostId]);
+  }, [viewerProfileId, canUsePremiumStickers, firstOwnedPostId]);
 
   useEffect(() => {
     function toggleStore() {
@@ -130,7 +136,7 @@ export function InteractiveMemoryBoard({
   }, []);
 
   useEffect(() => {
-    if (!viewerProfileId || !boardId) {
+    if (!viewerProfileId || !boardId || !canUsePremiumStickers) {
       return;
     }
 
@@ -148,7 +154,7 @@ export function InteractiveMemoryBoard({
     }, 750);
 
     return () => window.clearTimeout(timeoutId);
-  }, [stickers, boardId, viewerProfileId, ownsPost]);
+  }, [stickers, boardId, viewerProfileId, canUsePremiumStickers, ownsPost]);
 
   function addSticker(
     stickerId: StickerId,
@@ -161,7 +167,10 @@ export function InteractiveMemoryBoard({
       requireDropTarget?: boolean;
     } = {},
   ) {
-    if (!viewerProfileId) {
+    if (!viewerProfileId || !canUsePremiumStickers) {
+      if (viewerProfileId && !canUsePremiumStickers) {
+        setLimitWarning("EveSpace Premium is required to use stickers.");
+      }
       return;
     }
 
@@ -288,7 +297,10 @@ export function InteractiveMemoryBoard({
     event: React.PointerEvent<HTMLDivElement>,
     stickerId: StickerId,
   ) {
-    if (!viewerProfileId) {
+    if (!viewerProfileId || !canUsePremiumStickers) {
+      if (viewerProfileId && !canUsePremiumStickers) {
+        setLimitWarning("EveSpace Premium is required to use stickers.");
+      }
       return;
     }
 
@@ -383,7 +395,7 @@ export function InteractiveMemoryBoard({
         </div>
       ) : null}
 
-      <div className="memory-grid w-full touch-pan-y pt-4 sm:pt-6">
+      <div className="memory-grid w-full touch-pan-y pt-0">
         {posts.length === 0 ? (
           <div className="memory-board-empty-state mx-auto w-full max-w-xl rounded-[2rem] p-6 text-center">
             <p className="text-lg font-black">No memories have been posted yet.</p>
@@ -399,7 +411,9 @@ export function InteractiveMemoryBoard({
                 viewerProfileId && post.profileId === viewerProfileId,
               )}
               canEditStickers={Boolean(
-                viewerProfileId && post.profileId === viewerProfileId,
+                viewerProfileId &&
+                  canUsePremiumStickers &&
+                  post.profileId === viewerProfileId,
               )}
               onSelect={handleSelectPost}
               onStickerDelete={deleteSticker}
@@ -417,6 +431,7 @@ export function InteractiveMemoryBoard({
       <StickerStorePanel
         hint={stickerStoreHint}
         maxStickersPerPost={maxStickersPerPost}
+        canUsePremiumStickers={canUsePremiumStickers}
         onAddSticker={(stickerId) => addSticker(stickerId)}
         onClose={() => setStoreOpen(false)}
         onStartStickerDrag={startStickerDrag}

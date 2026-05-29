@@ -17,6 +17,7 @@ import { replaceOfficialEventSponsors } from "@/lib/data/official-event-sponsors
 import { upsertScheduleItems } from "@/lib/data/schedules";
 import { DEFAULT_BOARD_THEME, toBoardThemeId } from "@/lib/board-themes";
 import { resolveEventLocationInput } from "@/lib/maps/event-location";
+import { getPremiumStatus } from "@/lib/premium/premium-utils.mjs";
 import { slugify } from "@/lib/utils";
 import type {
   BoardBackgroundTheme,
@@ -30,6 +31,10 @@ export async function createHostedOfficialEventAction(formData: FormData) {
 
   if (!profile) {
     redirect("/login");
+  }
+
+  if (!getPremiumStatus(profile).isPremium) {
+    redirect("/premium?next=/official-events/new");
   }
 
   const input = readHostedOfficialEventInput(formData);
@@ -99,7 +104,7 @@ export async function createHostedOfficialEventAction(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/dashboard");
   revalidatePath("/admin/official-events");
-  revalidatePath("/admin/verification");
+  revalidatePath("/explore");
   redirect(`/official-events/${result.data.id}?submitted=1`);
 }
 
@@ -129,7 +134,6 @@ export async function deleteHostedOfficialEventAction(formData: FormData) {
   revalidatePath("/explore");
   revalidatePath("/dashboard");
   revalidatePath("/admin/official-events");
-  revalidatePath("/admin/verification");
   revalidatePath(`/official-events/${board.id}`);
   revalidatePath(`/events/${board.slug}`);
   redirect("/dashboard");
@@ -165,7 +169,7 @@ function readHostedOfficialEventInput(formData: FormData): EventInput {
             domain.toLowerCase().replace(/^@/, ""),
           )
         : [],
-    verificationStatus: "pending_review",
+    verificationStatus: "verified",
   };
 }
 

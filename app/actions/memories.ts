@@ -18,6 +18,10 @@ import {
   maxUploadSizeBytes,
   memoryPostMediaBucket,
 } from "@/lib/constants";
+import {
+  assertPremiumStickerAccess,
+  canUsePremiumStickers,
+} from "@/lib/premium/premium-utils.mjs";
 import { isRegisteredStickerId } from "@/lib/stickers/sticker-registry";
 import type {
   Board,
@@ -86,6 +90,10 @@ async function createBoardMemoryPost(
 
   const stickers = readStickers(formData, {
     rejectOverLimit: board.boardType === "official_event",
+  });
+  assertPremiumStickerAccess({
+    profile,
+    stickerCount: stickers.length,
   });
 
   const status = "approved";
@@ -849,6 +857,10 @@ export async function syncOverlayStickersAction(payload: {
   }
 
   const incomingByPost = new Map<string, PlacedSticker[]>();
+
+  if (!canUsePremiumStickers(profile)) {
+    throw new Error("Premium is required to use stickers.");
+  }
 
   for (const sticker of payload.stickers) {
     if (!sanitizePersistedOverlay(sticker)) {

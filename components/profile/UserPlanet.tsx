@@ -6,6 +6,7 @@ import {
 } from "@/components/profile/HolographicPlanetGlobe";
 import { LinkButton } from "@/components/ui/Button";
 import { getPlanetLevelInfo } from "@/lib/planet/planet-levels";
+import { getPremiumStatus } from "@/lib/premium/premium-utils.mjs";
 import { compactDateLocation } from "@/lib/utils";
 import type { Event, Profile } from "@/types/evespace";
 
@@ -26,6 +27,7 @@ export function UserPlanet({
   const globeSignals = events.map(toGlobeSignal);
   const displayName = profile.displayName ?? "Evespace Explorer";
   const isSelf = mode === "self";
+  const premiumStatus = getPremiumStatus(profile);
   const emptySignalText = isSelf
     ? "Create your first managed event to light up the planet."
     : "Public managed events will light up this planet.";
@@ -38,9 +40,16 @@ export function UserPlanet({
             <div className="flex min-w-0 items-center gap-4">
               <ProfileAvatar profile={profile} />
               <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.32em] text-cyan-100">
-                  {isSelf ? "Your Planet" : "User Planet"}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.32em] text-cyan-100">
+                    {isSelf ? "Your Planet" : "User Planet"}
+                  </p>
+                  {premiumStatus.isPremium ? (
+                    <span className="rounded-full border border-amber-200/45 bg-amber-200/15 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-amber-100">
+                      Premium
+                    </span>
+                  ) : null}
+                </div>
                 {meta || (isSelf && profile.email) ? (
                   <p className="mt-1 truncate text-sm text-slate-400">
                     {meta ?? profile.email}
@@ -52,6 +61,13 @@ export function UserPlanet({
             <h1 className="mt-7 max-w-2xl break-words text-[clamp(2.35rem,11vw,4.25rem)] font-semibold leading-[0.98] text-white">
               {displayName}&apos;s Planet
             </h1>
+
+            {premiumStatus.isPremium ? (
+              <div className="mt-5 rounded-3xl border border-amber-200/30 bg-amber-200/[0.09] px-4 py-3 text-sm leading-6 text-amber-50">
+                EveSpace Premium is active. Official event hosting and premium
+                stickers are unlocked.
+              </div>
+            ) : null}
 
             {actionSlot ? <div className="mt-7">{actionSlot}</div> : null}
             {isSelf ? (
@@ -141,9 +157,5 @@ function getEventHref(event: Event) {
     return `/boards/${event.id}`;
   }
 
-  if (event.visibility === "public" && event.verificationStatus === "verified") {
-    return `/events/${event.slug}`;
-  }
-
-  return `/dashboard/events/${event.id}/moderation`;
+  return `/official-events/${event.id}`;
 }

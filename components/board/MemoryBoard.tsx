@@ -8,10 +8,12 @@ export function MemoryBoard({
   posts,
   previousPageHref,
   returnPath,
+  canUsePremiumStickers = false,
   themeClassName,
   viewerProfileId = null,
 }: {
   boardId: string;
+  canUsePremiumStickers?: boolean;
   nextPageHref?: string | null;
   posts: MemoryPost[];
   previousPageHref?: string | null;
@@ -30,10 +32,11 @@ export function MemoryBoard({
   ].join("|");
 
   return (
-    <div className="grid min-w-0 max-w-full gap-6 overflow-x-clip">
+    <div className="grid min-w-0 max-w-full gap-2 overflow-x-clip">
       <InteractiveMemoryBoard
         key={interactiveKey}
         boardId={boardId}
+        canUsePremiumStickers={canUsePremiumStickers}
         posts={posts}
         returnPath={returnPath}
         themeClassName={themeClassName}

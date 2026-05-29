@@ -16,6 +16,7 @@ import { FriendsBoardsFeed } from "@/components/boards/FriendsBoardsFeed";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { getPremiumStatus } from "@/lib/premium/premium-utils.mjs";
 import type { Profile } from "@/types/evespace";
 
 type PeopleListMode = "following" | "followers";
@@ -47,6 +48,10 @@ export default async function DashboardPage({
     getFollowingProfiles(profile.id),
     getFollowerProfiles(profile.id),
   ]);
+  const premiumStatus = getPremiumStatus(profile);
+  const hostOfficialEventHref = premiumStatus.isPremium
+    ? "/official-events/new"
+    : "/premium?next=/official-events/new";
 
   return (
     <main className="cosmic-bg evespace-page">
@@ -77,7 +82,7 @@ export default async function DashboardPage({
             </LinkButton>
             <LinkButton
               className="w-full"
-              href="/official-events/new"
+              href={hostOfficialEventHref}
               variant="secondary"
             >
               Host an official event
@@ -139,7 +144,7 @@ export default async function DashboardPage({
               <h2 className="evespace-section-title">Official Sites</h2>
               <LinkButton
                 className="memory-board-soft-button"
-                href="/official-events/new"
+                href={hostOfficialEventHref}
                 variant="ghost"
               >
                 Host Event
@@ -148,7 +153,7 @@ export default async function DashboardPage({
             {officialSites.length === 0 ? (
               <EmptyState
                 title="No official sites yet."
-                description="Hosted official event pages you submit for EveSpace approval will appear here."
+                description="Official event pages you host will appear here."
               />
             ) : (
               <div className="grid gap-4">

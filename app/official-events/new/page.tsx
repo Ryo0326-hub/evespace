@@ -3,6 +3,7 @@ import { createHostedOfficialEventAction } from "@/app/actions/official-events";
 import { OfficialEventHostForm } from "@/components/official-events/OfficialEventHostForm";
 import { LinkButton } from "@/components/ui/Button";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
+import { getPremiumStatus } from "@/lib/premium/premium-utils.mjs";
 
 export default async function NewHostedOfficialEventPage({
   searchParams,
@@ -13,6 +14,10 @@ export default async function NewHostedOfficialEventPage({
 
   if (!profile) {
     redirect("/login");
+  }
+
+  if (!getPremiumStatus(profile).isPremium) {
+    redirect("/premium?next=/official-events/new");
   }
 
   const error = (await searchParams)?.error;

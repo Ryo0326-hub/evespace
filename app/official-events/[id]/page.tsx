@@ -53,8 +53,7 @@ export default async function OfficialEventDetailPage({
       <div className="evespace-shell max-w-6xl">
         {submitted ? (
           <div className="rounded-3xl border border-cyan-100/25 bg-cyan-100/[0.08] px-4 py-3 text-sm font-medium text-cyan-50">
-            Your official event has been submitted and is awaiting EveSpace
-            approval. It will not appear publicly until approved.
+            Your official event has been published.
           </div>
         ) : null}
 

@@ -299,6 +299,14 @@ export function mapProfile(row: DbEvent): Profile {
       row.role === "platform_admin" || row.role === "super_admin"
         ? row.role
         : "user",
+    stripeCustomerId: (row.stripe_customer_id as string | null) ?? null,
+    stripeSubscriptionId: (row.stripe_subscription_id as string | null) ?? null,
+    stripeSubscriptionStatus:
+      (row.stripe_subscription_status as string | null) ?? null,
+    stripeCurrentPeriodEnd:
+      (row.stripe_current_period_end as string | null) ?? null,
+    stripeCancelAtPeriodEnd: Boolean(row.stripe_cancel_at_period_end),
+    premiumSince: (row.premium_since as string | null) ?? null,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
   };

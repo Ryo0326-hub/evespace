@@ -50,19 +50,14 @@ export function MemoryCard({
         data-memory-card-id={post.id}
         onClick={() => onSelect?.(post.id)}
         className={cn(
-          "relative min-w-0 max-w-full overflow-hidden rounded-[1.7rem] border-[3px] border-black bg-[#fffaf0] p-3 text-black transition sm:p-4",
+          "memory-post-card relative min-w-0 max-w-full overflow-hidden rounded-[1.7rem] border-2 border-dotted border-slate-300 bg-[#fffaf0] p-3 text-black transition sm:p-4",
           selected ? "ring-4 ring-pink-200/85 ring-offset-2 ring-offset-[#fffaf0]" : "",
         )}
       >
-        <header className="relative z-10 flex min-h-12 items-center justify-between gap-3 border-b-2 border-dashed border-black/15 px-1 pb-3">
-          <div className="min-w-0">
-            <p className="truncate text-xs font-black uppercase tracking-[0.2em] text-slate-700">
-              {post.authorDisplayName || "Anonymous"}
-            </p>
-            <time className="text-xs font-semibold text-slate-500">
-              {formatDate(post.createdAt)}
-            </time>
-          </div>
+        <header className="relative z-10 flex min-h-7 items-center justify-between gap-2 border-b-2 border-dashed border-black/15 px-1 pb-2">
+          <time className="min-w-0 text-xs font-bold text-slate-500">
+            {formatDate(post.createdAt)}
+          </time>
           {canDeletePost ? (
             <button
               aria-label="Delete memory"
@@ -107,7 +102,7 @@ export function MemoryCard({
           </div>
         ) : null}
 
-        <div className="relative z-10 mt-3 overflow-hidden rounded-[1.15rem] border-2 border-black bg-white">
+        <div className="memory-post-media relative z-10 mt-2 overflow-hidden rounded-[1.15rem] border-2 border-slate-300 bg-white">
           <img
             src={post.imageUrl}
             alt={post.caption ?? "Event memory"}
@@ -146,7 +141,7 @@ export function MemoryCard({
           ))}
         </div>
 
-        <div className="relative z-10 px-1 pb-2 pt-4">
+        <div className="relative z-10 px-1 pb-1 pt-2">
           {post.caption ? (
             <p className="min-w-0 whitespace-pre-wrap break-words text-sm font-semibold leading-6 text-black [overflow-wrap:anywhere]">
               {post.caption}

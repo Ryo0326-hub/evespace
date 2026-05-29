@@ -54,7 +54,28 @@ export type StickyNoteStyle =
   | "blue"
   | "glass";
 
-export type StickerCategory = "pixel" | "doodle" | "clay";
+export type StickerCategory =
+  | "pixel"
+  | "doodle"
+  | "clay"
+  | "favorites"
+  | "gifs"
+  | "people"
+  | "characters"
+  | "animals"
+  | "food"
+  | "health"
+  | "games"
+  | "objects"
+  | "nature"
+  | "emotes"
+  | "spooky"
+  | "commerce"
+  | "media"
+  | "sports"
+  | "beauty"
+  | "tech"
+  | "fantasy";
 
 export type StickerId = string;
 
@@ -303,6 +324,12 @@ export type Profile = {
   avatarUrl: string | null;
   email: string | null;
   role: AppUserRole;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  stripeSubscriptionStatus: string | null;
+  stripeCurrentPeriodEnd: string | null;
+  stripeCancelAtPeriodEnd: boolean;
+  premiumSince: string | null;
   createdAt: string;
   updatedAt: string;
 };

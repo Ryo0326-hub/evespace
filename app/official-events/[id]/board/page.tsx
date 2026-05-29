@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
+import {
+  MemoryBoardActionBar,
+  type MemoryBoardAction,
+} from "@/components/board/MemoryBoardActionBar";
 import { MemoryBoard } from "@/components/board/MemoryBoard";
-import { StickerStoreButton } from "@/components/board/StickerStoreButton";
-import { LinkButton } from "@/components/ui/Button";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
 import { getBoardTheme } from "@/lib/board-themes";
 import {
@@ -10,10 +12,7 @@ import {
   getAccessibleBoardById,
 } from "@/lib/data/boards";
 import { getApprovedMemoryPostsPageByBoard } from "@/lib/data/memory-posts";
-import { cn } from "@/lib/utils";
-
-const postMemoryActionClassName =
-  "memory-board-cute-button inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 py-2.5 text-sm font-black transition sm:w-auto";
+import { canUsePremiumStickers } from "@/lib/premium/premium-utils.mjs";
 
 export default async function OfficialEventMemoryBoardPage({
   params,
@@ -37,78 +36,87 @@ export default async function OfficialEventMemoryBoardPage({
     canPostToBoard(event, profile),
   ]);
   const background = getBoardTheme(event.boardBackgroundTheme);
+  const actionBarActions: MemoryBoardAction[] = [];
+
+  if (canPost) {
+    actionBarActions.push({
+      ariaLabel: "Post a memory",
+      href: `/official-events/${event.id}/post`,
+      icon: "create",
+      label: "Post",
+      type: "link",
+    });
+  } else if (!profile) {
+    actionBarActions.push({
+      ariaLabel: "Sign in to post a memory",
+      href: "/login",
+      icon: "create",
+      label: "Post",
+      type: "link",
+    });
+  }
+
+  actionBarActions.push(
+    {
+      ariaLabel: "Open sticker store",
+      icon: "sticker",
+      label: "Stickers",
+      type: "sticker-store",
+    },
+    {
+      ariaLabel: "Back to event",
+      href: `/official-events/${event.id}`,
+      icon: "back",
+      label: "Back",
+      type: "link",
+    },
+  );
 
   return (
     <main
-      className={`${background.pageClassName} min-h-dvh overflow-x-clip overflow-y-visible px-3 pb-24 pt-4 text-slate-950 sm:px-6 sm:py-6 lg:px-8`}
+      className={`${background.pageClassName} memory-board-main min-h-dvh overflow-x-clip overflow-y-visible px-3 pb-36 pt-0 text-slate-950 sm:px-6 md:pb-6 md:pt-3 lg:px-8`}
     >
       <div className="mx-auto min-w-0 max-w-7xl">
-        <nav className="grid min-w-0 gap-3 sm:flex sm:items-center sm:justify-between">
-          <LinkButton
-            className="memory-board-soft-button w-full sm:w-auto"
-            href={`/official-events/${event.id}`}
-            variant="ghost"
-          >
-            Back to Event
-          </LinkButton>
-          <div
-            className="grid min-w-0 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:justify-end"
-            id="memory-board-actions"
-          >
-            {canPost ? (
-              <LinkButton
-                className={postMemoryActionClassName}
-                href={`/official-events/${event.id}/post`}
-              >
-                Post Memory
-              </LinkButton>
-            ) : !profile ? (
-              <LinkButton className={postMemoryActionClassName} href="/login">
-                Sign in to Post
-              </LinkButton>
-            ) : null}
-            <StickerStoreButton />
+        <div className="memory-board-page-shell min-w-0 md:grid md:grid-cols-[6.25rem_minmax(0,1fr)] md:items-start md:gap-4">
+          <MemoryBoardActionBar actions={actionBarActions} />
+
+          <div className="memory-board-content-stack min-w-0">
+            <header className="memory-board-title-card mt-0 mb-0 max-w-3xl rounded-[2rem] p-5 md:mt-3 md:mb-3 sm:p-8">
+              <p className="text-sm font-black uppercase tracking-[0.35em] text-slate-600">
+                Official Event Memory Board
+              </p>
+              <h1 className="mt-3 text-3xl font-black tracking-normal text-black sm:text-5xl lg:text-6xl">
+                <span className="memory-board-title-mark">{event.title}</span>
+              </h1>
+              <p className="mt-5 text-sm font-medium leading-7 text-slate-700 sm:text-base">
+                Browse approved memories from this official event. Official event
+                posts can include up to 3 stickers.
+              </p>
+            </header>
+
+            <div className="overflow-x-clip overflow-y-visible rounded-[1.5rem] text-slate-950">
+              <MemoryBoard
+                boardId={event.id}
+                canUsePremiumStickers={canUsePremiumStickers(profile)}
+                nextPageHref={
+                  postPage.nextOffset === null
+                    ? null
+                    : `/official-events/${event.id}/board?offset=${postPage.nextOffset}`
+                }
+                posts={postPage.posts}
+                previousPageHref={
+                  postPage.previousOffset === null
+                    ? null
+                    : postPage.previousOffset === 0
+                      ? `/official-events/${event.id}/board`
+                      : `/official-events/${event.id}/board?offset=${postPage.previousOffset}`
+                }
+                returnPath={`/official-events/${event.id}/board`}
+                themeClassName={background.boardClassName}
+                viewerProfileId={profile?.id ?? null}
+              />
+            </div>
           </div>
-        </nav>
-
-        <header className="memory-board-title-card my-7 max-w-3xl rounded-[2rem] p-5 sm:my-10 sm:p-8">
-          <p className="text-sm font-black uppercase tracking-[0.35em] text-slate-600">
-            Official Event Memory Board
-          </p>
-          <h1 className="mt-3 text-3xl font-black tracking-normal text-black sm:text-5xl lg:text-6xl">
-            <span className="memory-board-title-mark">{event.title}</span>
-          </h1>
-          <p className="mt-5 text-sm font-medium leading-7 text-slate-700 sm:text-base">
-            Browse approved memories from this official event. Official event
-            posts can include up to 3 stickers.
-          </p>
-        </header>
-
-        <div
-          className={cn(
-            "overflow-x-clip overflow-y-visible rounded-[1.5rem] text-slate-950",
-            background.boardClassName,
-          )}
-        >
-          <MemoryBoard
-            boardId={event.id}
-            nextPageHref={
-              postPage.nextOffset === null
-                ? null
-                : `/official-events/${event.id}/board?offset=${postPage.nextOffset}`
-            }
-            posts={postPage.posts}
-            previousPageHref={
-              postPage.previousOffset === null
-                ? null
-                : postPage.previousOffset === 0
-                  ? `/official-events/${event.id}/board`
-                  : `/official-events/${event.id}/board?offset=${postPage.previousOffset}`
-            }
-            returnPath={`/official-events/${event.id}/board`}
-            themeClassName={background.boardClassName}
-            viewerProfileId={profile?.id ?? null}
-          />
         </div>
       </div>
     </main>

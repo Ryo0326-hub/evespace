@@ -2,6 +2,7 @@
 
 import { createPortal } from "react-dom";
 import { useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { StickerVisual } from "@/components/board/StickerVisual";
 import { STICKER_CATEGORIES, STICKERS } from "@/lib/stickers/sticker-registry";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ export function StickerStorePanel({
   onClose,
   onAddSticker,
   onStartStickerDrag,
+  canUsePremiumStickers,
   selectedStickerCount,
   maxStickersPerPost,
   themeClassName,
@@ -29,6 +31,7 @@ export function StickerStorePanel({
     event: React.PointerEvent<HTMLDivElement>,
     stickerId: StickerId,
   ) => void;
+  canUsePremiumStickers: boolean;
   selectedStickerCount: number;
   maxStickersPerPost: number;
   themeClassName?: string;
@@ -138,6 +141,7 @@ export function StickerStorePanel({
   return createPortal(
     <div
       className={cn(
+        "memory-board-sticker-store-shell",
         "fixed z-[110] w-[min(20rem,calc(100vw-1.5rem))] sm:w-80",
         "right-3 top-[9rem] sm:right-6 sm:top-[9.25rem]",
         themeClassName,
@@ -147,7 +151,7 @@ export function StickerStorePanel({
         transform: `translate3d(${panelOffset.x}px, ${panelOffset.y}px, 0)`,
       }}
     >
-      <section className="memory-board-sticker-store flex max-h-[35vh] flex-col overflow-hidden rounded-[1.35rem] sm:max-h-[28rem] sm:rounded-[1.5rem]">
+      <section className="memory-board-sticker-store flex max-h-[35vh] flex-col overflow-hidden rounded-[1.35rem] bg-clip-padding sm:max-h-[28rem] sm:rounded-[1.5rem]">
         <header className="grid shrink-0 gap-3 border-b-2 border-dashed border-black/15 px-3 py-3">
           <div className="flex items-start justify-between gap-3">
             <div
@@ -193,12 +197,25 @@ export function StickerStorePanel({
         ) : null}
 
         <div className="flex-1 overflow-y-auto p-3 pb-10">
+          {!canUsePremiumStickers ? (
+            <div className="memory-board-premium-lock mb-3 rounded-2xl border-2 border-black/15 bg-[#fff4a8] px-3 py-3 text-sm font-bold text-black">
+              <p>EveSpace Premium?</p>
+              <Link
+                className="memory-board-premium-link mt-3 inline-flex min-h-10 items-center justify-center rounded-full border-2 border-black bg-white px-4 text-xs font-black text-black transition hover:bg-[#fff8c8]"
+                href="/premium"
+              >
+                Unlock Premium
+              </Link>
+            </div>
+          ) : null}
+
           <label className="grid gap-1.5 text-sm text-black">
             <span className="text-[0.65rem] font-black uppercase tracking-[0.18em] text-black">
               Search
             </span>
             <input
               className="min-h-9 rounded-xl border-2 border-black/20 bg-white px-3 text-sm font-semibold text-slate-950 outline-none placeholder:text-slate-500 focus:border-black"
+              disabled={!canUsePremiumStickers}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search stickers"
               type="search"
@@ -216,6 +233,7 @@ export function StickerStorePanel({
                     : "border-black/20 bg-white text-black",
                 )}
                 key={category.id}
+                disabled={!canUsePremiumStickers}
                 onClick={() => setCategoryId(category.id)}
                 type="button"
               >
@@ -228,8 +246,13 @@ export function StickerStorePanel({
             {visibleStickers.map((sticker) => (
               <button
                 className="touch-none rounded-[1rem] border border-transparent p-2 text-center transition hover:border-black/10 hover:bg-white/75"
+                disabled={!canUsePremiumStickers}
                 key={sticker.id}
                 onKeyDown={(event) => {
+                  if (!canUsePremiumStickers) {
+                    return;
+                  }
+
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
                     onAddSticker(sticker.id);
@@ -240,7 +263,11 @@ export function StickerStorePanel({
                 <div
                   className="mx-auto flex size-[50px] touch-none cursor-grab items-center justify-center active:cursor-grabbing"
                   data-sticker-preview
-                  onPointerDown={(event) => onStartStickerDrag(event, sticker.id)}
+                  onPointerDown={(event) => {
+                    if (canUsePremiumStickers) {
+                      onStartStickerDrag(event, sticker.id);
+                    }
+                  }}
                 >
                   <StickerVisual size={50} stickerId={sticker.id} />
                 </div>
