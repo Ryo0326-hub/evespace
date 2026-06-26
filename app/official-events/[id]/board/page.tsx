@@ -74,10 +74,10 @@ export default async function OfficialEventMemoryBoardPage({
 
   return (
     <main
-      className={`${background.pageClassName} memory-board-main min-h-dvh overflow-x-clip overflow-y-visible px-3 pb-36 pt-0 text-slate-950 sm:px-6 md:pb-6 md:pt-3 lg:px-8`}
+      className={`${background.pageClassName} memory-board-main h-[calc(100dvh-4rem)] overflow-x-clip overflow-y-auto px-3 pb-36 pt-0 text-slate-950 sm:px-6 md:pt-3 lg:px-8`}
     >
-      <div className="mx-auto min-w-0 max-w-7xl">
-        <div className="memory-board-page-shell min-w-0 md:grid md:grid-cols-[6.25rem_minmax(0,1fr)] md:items-start md:gap-4">
+      <div className="min-w-0 w-full">
+        <div className="memory-board-page-shell min-w-0 w-full">
           <MemoryBoardActionBar actions={actionBarActions} />
 
           <div className="memory-board-content-stack min-w-0">

@@ -22,6 +22,7 @@ import {
   assertPremiumStickerAccess,
   canUsePremiumStickers,
 } from "@/lib/premium/premium-utils.mjs";
+import { normalizeMemoryPostStyleSelection } from "@/lib/memory-post-style.mjs";
 import { isRegisteredStickerId } from "@/lib/stickers/sticker-registry";
 import type {
   Board,
@@ -70,21 +71,31 @@ async function createBoardMemoryPost(
 
   const board = await getAccessibleBoardById(boardId, profile);
   const photo = formData.get("photo");
+  const photoFile = photo instanceof File && photo.size > 0 ? photo : null;
+  const message = clean(formData.get("message")) ?? clean(formData.get("caption"));
+  const memoryPostStyle = normalizeMemoryPostStyleSelection({
+    stickyNoteStyle: formData.get("stickyNoteStyle"),
+    memoryPenStyle: formData.get("memoryPenStyle"),
+  });
   const supabase = getSupabaseAdminClient();
 
   if (!board || !supabase || !(await canPostToBoard(board, profile))) {
     throw new Error("Memory posting is not configured.");
   }
 
-  if (!(photo instanceof File) || photo.size === 0) {
-    throw new Error("Choose a photo before posting.");
+  if (!message) {
+    throw new Error("Write a message before posting.");
   }
 
-  if (!acceptedImageTypes.includes(photo.type)) {
+  if (message.length > 1200) {
+    throw new Error("Messages must be 1200 characters or fewer.");
+  }
+
+  if (photoFile && !acceptedImageTypes.includes(photoFile.type)) {
     throw new Error("Use a JPG, PNG, or WebP image.");
   }
 
-  if (photo.size > maxUploadSizeBytes) {
+  if (photoFile && photoFile.size > maxUploadSizeBytes) {
     throw new Error("Image must be 5MB or smaller.");
   }
 
@@ -100,28 +111,36 @@ async function createBoardMemoryPost(
   let uploadedMedia: UploadedMemoryMedia | null = null;
   let insertResult = await insertMemoryPostRecord({
     board,
-    formData,
     legacyImageUrl: null,
     legacyStickers: [],
     legacyStoragePath: null,
+    memoryPostStyle,
+    message,
     profile,
     status,
   });
   let post = insertResult.post;
 
   if (!post && isLegacyImageUrlRequiredError(insertResult.error)) {
+    if (!photoFile) {
+      throw new Error(
+        "Message-only memories need the latest Supabase memory post migration.",
+      );
+    }
+
     uploadedMedia = await uploadMemoryMedia({
       boardId: board.id,
-      file: photo,
+      file: photoFile,
       pathOwner: profile.clerkUserId,
       supabase,
     });
     insertResult = await insertMemoryPostRecord({
       board,
-      formData,
       legacyImageUrl: uploadedMedia.publicUrl,
       legacyStickers: stickers,
       legacyStoragePath: uploadedMedia.storagePath,
+      memoryPostStyle,
+      message,
       profile,
       status,
     });
@@ -133,22 +152,27 @@ async function createBoardMemoryPost(
   }
 
   try {
-    if (!uploadedMedia) {
+    let mediaSaved = true;
+
+    if (photoFile && !uploadedMedia) {
       uploadedMedia = await uploadMemoryMedia({
         boardId: board.id,
-        file: photo,
+        file: photoFile,
         pathOwner: String(post.id),
         supabase,
       });
     }
 
-    const mediaSaved = await insertMemoryPostMedia({
-      boardId: board.id,
-      file: photo,
-      media: uploadedMedia,
-      postId: String(post.id),
-      supabase,
-    });
+    if (photoFile && uploadedMedia) {
+      mediaSaved = await insertMemoryPostMedia({
+        boardId: board.id,
+        file: photoFile,
+        media: uploadedMedia,
+        postId: String(post.id),
+        supabase,
+      });
+    }
+
     const stickersSaved = await insertCornerStickerRows({
       boardId: board.id,
       postId: String(post.id),
@@ -156,12 +180,18 @@ async function createBoardMemoryPost(
       supabase,
     });
 
-    if (!mediaSaved || !stickersSaved) {
+    if (photoFile && uploadedMedia && (!mediaSaved || !stickersSaved)) {
       await updateLegacyMemoryPostAssets({
         imageUrl: uploadedMedia.publicUrl,
         postId: String(post.id),
         stickers,
         storagePath: uploadedMedia.storagePath,
+        supabase,
+      });
+    } else if (!stickersSaved) {
+      await updateLegacyMemoryPostStickers({
+        postId: String(post.id),
+        stickers,
         supabase,
       });
     }
@@ -208,18 +238,23 @@ type UploadedMemoryMedia = {
 
 async function insertMemoryPostRecord({
   board,
-  formData,
   legacyImageUrl,
   legacyStickers,
   legacyStoragePath,
+  memoryPostStyle,
+  message,
   profile,
   status,
 }: {
   board: Board;
-  formData: FormData;
   legacyImageUrl: string | null;
   legacyStickers: StickerSelection[];
   legacyStoragePath: string | null;
+  memoryPostStyle: {
+    stickyNoteStyle: string;
+    memoryPenStyle: string;
+  };
+  message: string;
   profile: Profile;
   status: MemoryPostStatus;
 }): Promise<{
@@ -242,18 +277,18 @@ async function insertMemoryPostRecord({
     profile_id: profile.id,
     clerk_user_id: profile.clerkUserId,
     author_display_name:
-      clean(formData.get("authorDisplayName")) ||
       profile.displayName ||
       profile.email ||
       "Anonymous",
     image_url: legacyImageUrl,
     storage_path: legacyStoragePath,
-    caption: clean(formData.get("caption")),
+    caption: message,
     stickers: legacyStickers,
     status,
     frame_style: "none",
-    sticky_note_style: "default",
-    rotation: 0,
+    sticky_note_style: memoryPostStyle.stickyNoteStyle,
+    message_pen_style: memoryPostStyle.memoryPenStyle,
+    rotation: createMemoryPostRotation(),
   };
 
   const { data, error } = await supabase
@@ -423,6 +458,28 @@ async function updateLegacyMemoryPostAssets({
     .update({
       image_url: imageUrl,
       storage_path: storagePath,
+      stickers,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", postId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+async function updateLegacyMemoryPostStickers({
+  postId,
+  stickers,
+  supabase,
+}: {
+  postId: string;
+  stickers: StickerSelection[];
+  supabase: SupabaseAdminClient;
+}) {
+  const { error } = await supabase
+    .from("memory_posts")
+    .update({
       stickers,
       updated_at: new Date().toISOString(),
     })
@@ -797,6 +854,10 @@ function readStickers(
 function clean(value: FormDataEntryValue | null) {
   const next = String(value ?? "").trim();
   return next.length > 0 ? next : null;
+}
+
+function createMemoryPostRotation() {
+  return Math.round((Math.random() * 3 - 1.5) * 10) / 10;
 }
 
 function clampUnitInterval(value: number) {

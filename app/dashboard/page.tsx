@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
 import {
   getFriendBoards,
@@ -61,7 +62,9 @@ export default async function DashboardPage({
             <p className="evespace-kicker">
               Dashboard
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
+          </div>
+          <div className="dashboard-action-stack grid w-full gap-2 sm:w-64">
+            <div className="dashboard-follow-grid grid grid-cols-2 gap-2">
               <FollowStatLink
                 active={peopleMode === "following"}
                 count={followCounts.following}
@@ -75,16 +78,30 @@ export default async function DashboardPage({
                 label="Followers"
               />
             </div>
-          </div>
-          <div className="grid w-full gap-2 sm:w-64">
-            <LinkButton className="w-full" href="/boards/new">
+            <LinkButton className="dashboard-primary-action w-full gap-2" href="/boards/new">
+              <Image
+                alt=""
+                aria-hidden="true"
+                className="h-7 w-7 shrink-0 object-contain"
+                height={28}
+                src="/dashboard-icons/create.png"
+                width={28}
+              />
               Create
             </LinkButton>
             <LinkButton
-              className="w-full"
+              className="dashboard-primary-action w-full gap-2"
               href={hostOfficialEventHref}
               variant="secondary"
             >
+              <Image
+                alt=""
+                aria-hidden="true"
+                className="h-8 w-8 shrink-0 object-contain"
+                height={32}
+                src="/dashboard-icons/host.png"
+                width={32}
+              />
               Host an official event
             </LinkButton>
           </div>
@@ -100,14 +117,7 @@ export default async function DashboardPage({
         <div className="grid gap-8">
           <section className="evespace-section">
             <div className="evespace-section-header">
-              <h2 className="evespace-section-title">My Memory Boards</h2>
-              <LinkButton
-                className="memory-board-soft-button"
-                href="/boards/new"
-                variant="ghost"
-              >
-                New Board
-              </LinkButton>
+              <h2 className="dashboard-section-title">My Memory Boards</h2>
             </div>
             {myBoards.length === 0 ? (
               <EmptyState
@@ -125,30 +135,16 @@ export default async function DashboardPage({
 
           <section className="evespace-section">
             <div className="evespace-section-header">
-              <h2 className="evespace-section-title">
+              <h2 className="dashboard-section-title">
                 Friends&apos; Memory Boards
               </h2>
-              <LinkButton
-                className="memory-board-soft-button"
-                href="/dashboard/friends"
-                variant="ghost"
-              >
-                View Friends
-              </LinkButton>
             </div>
             <FriendsBoardsFeed boards={friendBoards} />
           </section>
 
           <section className="evespace-section">
             <div className="evespace-section-header">
-              <h2 className="evespace-section-title">Official Sites</h2>
-              <LinkButton
-                className="memory-board-soft-button"
-                href={hostOfficialEventHref}
-                variant="ghost"
-              >
-                Host Event
-              </LinkButton>
+              <h2 className="dashboard-section-title">Official Sites</h2>
             </div>
             {officialSites.length === 0 ? (
               <EmptyState
@@ -192,15 +188,27 @@ function FollowStatLink({
   return (
     <Link
       aria-pressed={active}
-      className={`inline-flex min-h-11 min-w-[8.5rem] items-center justify-between gap-3 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+      className={`dashboard-follow-button inline-flex min-h-11 w-full min-w-0 items-center justify-between gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition ${
         active
           ? "border-cyan-100/70 bg-cyan-100 text-slate-950 shadow-[0_0_24px_rgba(103,232,249,0.22)]"
           : "border-white/12 bg-white/[0.07] text-slate-200 hover:border-cyan-100/40 hover:bg-cyan-100/10 hover:text-white"
       }`}
       href={href}
     >
-      <span>{label}</span>
-      <span className={active ? "text-slate-950" : "text-cyan-100"}>{count}</span>
+      <span className="flex min-w-0 items-center gap-1.5">
+        <Image
+          alt=""
+          aria-hidden="true"
+          className="h-6 w-6 shrink-0 object-contain sm:h-7 sm:w-7"
+          height={24}
+          src="/dashboard-icons/friends.png"
+          width={24}
+        />
+        <span className="truncate">{label}</span>
+      </span>
+      <span className={active ? "shrink-0 text-slate-950" : "shrink-0 text-cyan-100"}>
+        {count}
+      </span>
     </Link>
   );
 }

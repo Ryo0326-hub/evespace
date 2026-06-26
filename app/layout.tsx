@@ -21,6 +21,14 @@ export const metadata: Metadata = {
   },
   description:
     "A cosmic digital memory board where every event is a star and every star holds memories.",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/evespace-favicon.png", sizes: "40x40", type: "image/png" },
+    ],
+    shortcut: "/evespace-favicon.png",
+    apple: "/evespace-favicon.png",
+  },
 };
 
 export default function RootLayout({

@@ -6,6 +6,7 @@ import { MemoryPostForm } from "@/components/board/MemoryPostForm";
 import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
+import { getBoardTheme } from "@/lib/board-themes";
 import { getEventBySlug } from "@/lib/data/events";
 
 export default async function CreateMemoryPostPage({
@@ -20,24 +21,23 @@ export default async function CreateMemoryPostPage({
     notFound();
   }
 
+  const background = getBoardTheme(event.boardBackgroundTheme);
   const { userId } = await auth();
 
   if (!userId) {
     return (
-      <main className="cosmic-bg flex min-h-screen items-center justify-center px-4">
+      <main className={`${background.pageClassName} memory-create-page flex min-h-screen items-center justify-center px-4`}>
         <Card className="max-w-lg text-center">
-          <h1 className="text-2xl font-semibold text-white">
+          <h1 className="text-2xl font-semibold text-[#2b1d17]">
             Sign in to post a memory.
           </h1>
-          <p className="mt-3 text-sm leading-6 text-slate-300">
-            Public visitors can browse memories, but posting photos requires an
+          <p className="mt-3 text-sm leading-6 text-[#725a4d]">
+            Public visitors can browse memories, but posting memories requires an
             Evespace account.
           </p>
-          <SignInButton mode="modal">
-            <button className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-cyan-200 px-5 py-2.5 text-sm font-semibold text-slate-950">
-              Sign in
-            </button>
-          </SignInButton>
+          <span className="memory-scrapbook-sign-in">
+            <SignInButton mode="modal">Sign in</SignInButton>
+          </span>
         </Card>
       </main>
     );
@@ -47,25 +47,22 @@ export default async function CreateMemoryPostPage({
   const action = createMemoryPostAction.bind(null, event.slug);
 
   return (
-    <main className="cosmic-bg min-h-screen overflow-x-hidden px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
+    <main className={`${background.pageClassName} memory-create-page min-h-screen overflow-x-hidden px-3 py-4 sm:px-6 sm:py-6 lg:px-8`}>
       <div className="mx-auto w-full max-w-5xl min-w-0">
         <nav>
-          <LinkButton className="w-full sm:w-auto" href={`/events/${event.slug}`} variant="ghost">
+          <LinkButton
+            className="memory-create-back-button w-full sm:w-auto"
+            href={`/events/${event.slug}`}
+            variant="ghost"
+          >
             Back to Event
           </LinkButton>
         </nav>
 
         <header className="my-7 max-w-3xl sm:my-10">
-          <p className="text-sm font-medium uppercase tracking-[0.35em] text-cyan-100">
-            Leave a Memory
-          </p>
-          <h1 className="mt-3 break-words text-3xl font-semibold tracking-tight text-white sm:text-5xl">
+          <h1 className="break-words text-3xl font-black tracking-normal text-[#2b1d17] sm:text-5xl">
             Post to {event.title}
           </h1>
-          <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
-            Upload a photo, doodle on it, add a caption, and preview your memory
-            card before it joins the board.
-          </p>
         </header>
 
         <MemoryPostForm action={action} />

@@ -154,7 +154,7 @@ export function EventForm({
         </div>
 
         <div className="grid gap-4 rounded-3xl border border-white/10 bg-white/[0.045] p-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {BOARD_THEME_OPTIONS.map((theme) => {
               const background = getBoardTheme(theme);
 

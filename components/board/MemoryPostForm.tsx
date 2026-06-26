@@ -2,40 +2,62 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useFormStatus } from "react-dom";
+import Image from "next/image";
 import {
   PhotoDoodleEditor,
   type PhotoDoodleEditorHandle,
 } from "@/components/board/PhotoDoodleEditor";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Field, Input, Textarea } from "@/components/ui/Field";
+import { Field, Textarea } from "@/components/ui/Field";
 import { acceptedImageTypes, maxUploadSizeBytes } from "@/lib/constants";
+import {
+  defaultMemoryPaperStyle,
+  defaultMemoryPenStyle,
+  memoryPaperStyleOptions,
+  memoryPenStyleOptions,
+} from "@/lib/memory-post-style.mjs";
 import { cn } from "@/lib/utils";
+import type { MemoryPenStyle, StickyNoteStyle } from "@/types/evespace";
+
+type MemoryPaperStyle = Extract<StickyNoteStyle, "sky" | "mint" | "lavender">;
+
+function getPaperClassName(style: MemoryPaperStyle) {
+  return (
+    memoryPaperStyleOptions.find((option) => option.id === style)?.className ??
+    "memory-paper-mint"
+  );
+}
+
+function getPenClassName(style: MemoryPenStyle) {
+  return (
+    memoryPenStyleOptions.find((option) => option.id === style)?.className ??
+    "memory-pen-classic"
+  );
+}
 
 function MemoryPostSubmitButton({
-  fileSelected,
+  message,
   preparing,
 }: {
-  fileSelected: boolean;
+  message: string;
   preparing: boolean;
 }) {
   const { pending } = useFormStatus();
   const busy = pending || preparing;
+  const ready = message.trim().length > 0;
 
   return (
     <Button
       className={cn(
-        "w-full border-cyan-100/60 bg-cyan-100 text-slate-950 shadow-none hover:border-white/80 hover:bg-white hover:text-slate-950 sm:w-auto",
-        !fileSelected &&
-          !busy &&
-          "border-cyan-100/20 bg-cyan-100/[0.08] text-cyan-50 hover:border-cyan-100/20 hover:bg-cyan-100/[0.08] hover:text-cyan-50 disabled:opacity-100",
-        busy &&
-          "cursor-wait border-slate-500 bg-slate-500 text-white hover:border-slate-500 hover:bg-slate-500",
+        "memory-scrapbook-submit w-full rounded-full border-2 px-5 py-3 text-sm font-black shadow-none sm:w-auto",
+        !ready && !busy && "disabled:opacity-55",
+        busy && "cursor-wait opacity-80",
       )}
-      disabled={!fileSelected || busy}
+      disabled={!ready || busy}
       type="submit"
     >
-      {preparing ? "Preparing photo…" : pending ? "Posting…" : "Post Memory"}
+      {preparing ? "Preparing photo..." : pending ? "Posting..." : "Post Memory"}
     </Button>
   );
 }
@@ -57,9 +79,16 @@ export function MemoryPostForm({
   const [hasDoodles, setHasDoodles] = useState(false);
   const [isPreparingPhoto, setIsPreparingPhoto] = useState(false);
   const [submitError, setSubmitError] = useState("");
-  const [authorDisplayName, setAuthorDisplayName] = useState("");
-  const [caption, setCaption] = useState("");
+  const [message, setMessage] = useState("");
+  const [stickyNoteStyle, setStickyNoteStyle] = useState<MemoryPaperStyle>(
+    defaultMemoryPaperStyle as MemoryPaperStyle,
+  );
+  const [memoryPenStyle, setMemoryPenStyle] = useState<MemoryPenStyle>(
+    defaultMemoryPenStyle as MemoryPenStyle,
+  );
   const [createdAt] = useState(() => new Date().toISOString());
+  const paperClassName = getPaperClassName(stickyNoteStyle);
+  const penClassName = getPenClassName(memoryPenStyle);
 
   useEffect(() => {
     return () => {
@@ -72,6 +101,11 @@ export function MemoryPostForm({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     if (allowPreparedSubmitRef.current) {
       allowPreparedSubmitRef.current = false;
+      return;
+    }
+
+    if (!message.trim()) {
+      event.preventDefault();
       return;
     }
 
@@ -127,74 +161,160 @@ export function MemoryPostForm({
   }
 
   return (
-    <div className="w-full max-w-3xl min-w-0 overflow-hidden">
-      <Card className="w-full min-w-0 overflow-hidden p-4 shadow-none max-[360px]:p-3 sm:p-5">
-        <form action={action} className="grid gap-6" onSubmit={handleSubmit} ref={formRef}>
-          <Field label="Upload photo" hint="JPG, PNG, or WebP. Max 5MB.">
-            <Input
-              className="w-full min-w-0 max-w-full text-[0.8rem] file:mr-3 file:max-w-[8rem] file:truncate"
-              ref={fileInputRef}
-              name="photo"
-              type="file"
-              accept={acceptedImageTypes.join(",")}
-              onChange={(event) => {
-                handleFileChange(event.target.files?.[0] ?? null);
-              }}
-            />
-          </Field>
+    <div className="memory-post-create-shell w-full max-w-5xl min-w-0 overflow-hidden">
+      <Card className="memory-post-create-card w-full min-w-0 overflow-hidden p-4 shadow-none max-[360px]:p-3 sm:p-5 lg:p-6">
+        <form
+          action={action}
+          className="grid gap-5"
+          onSubmit={handleSubmit}
+          ref={formRef}
+        >
+          <input name="stickyNoteStyle" type="hidden" value={stickyNoteStyle} />
+          <input name="memoryPenStyle" type="hidden" value={memoryPenStyle} />
 
-          <div className="grid gap-2">
-            <div>
-              <p className="text-sm font-medium text-slate-200">Doodle on photo</p>
-              <p className="mt-1 text-xs text-slate-400">
-                {hasDoodles ? "Doodles will be saved into the uploaded image." : "Optional"}
-              </p>
-            </div>
-            <PhotoDoodleEditor
-              authorDisplayName={authorDisplayName || "You"}
-              caption={caption}
-              createdAt={createdAt}
-              file={file}
-              imageUrl={previewUrl}
-              onDoodleStateChange={setHasDoodles}
-              ref={doodleEditorRef}
-            />
+          <div className="grid gap-3 lg:grid-cols-2">
+            <section className="memory-scrapbook-section grid gap-3 rounded-[1.25rem] border-2 border-dashed p-3 sm:p-4">
+              <h3 className="text-lg font-black text-[#2b1d17]">
+                Pick Your Paper Color
+              </h3>
+              <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Paper color">
+                {memoryPaperStyleOptions.map((option) => (
+                  <button
+                    aria-pressed={stickyNoteStyle === option.id}
+                    className={cn(
+                      "memory-paper-choice min-h-12 rounded-[1rem] border-2 px-3 text-sm font-black transition",
+                      option.className,
+                      stickyNoteStyle === option.id && "is-selected",
+                    )}
+                    key={option.id}
+                    onClick={() => setStickyNoteStyle(option.id as MemoryPaperStyle)}
+                    type="button"
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="memory-scrapbook-section grid gap-3 rounded-[1.25rem] border-2 border-dashed p-3 sm:p-4">
+              <h3 className="text-lg font-black text-[#2b1d17]">
+                Choose Your Pen
+              </h3>
+              <div className="grid gap-2 sm:grid-cols-3" role="radiogroup" aria-label="Pen style">
+                {memoryPenStyleOptions.map((option) => (
+                  <button
+                    aria-pressed={memoryPenStyle === option.id}
+                    className={cn(
+                      "memory-pen-choice min-h-16 rounded-[1rem] border-2 px-3 py-2 text-left transition",
+                      memoryPenStyle === option.id && "is-selected",
+                    )}
+                    key={option.id}
+                    onClick={() => setMemoryPenStyle(option.id as MemoryPenStyle)}
+                    type="button"
+                  >
+                    <span className={cn("block text-sm text-[#2b1d17]", option.className)}>
+                      {option.label}
+                    </span>
+                    <span className="mt-1 block text-xs font-semibold text-[#725a4d]">
+                      {option.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
           </div>
 
-          <Field label="Display name">
-            <Input
-              name="authorDisplayName"
-              value={authorDisplayName}
-              onChange={(event) => setAuthorDisplayName(event.target.value)}
-              placeholder="Anonymous"
-            />
-          </Field>
-
-          <Field label="Caption">
+          <Field label="Message">
             <Textarea
-              name="caption"
-              value={caption}
-              onChange={(event) => setCaption(event.target.value)}
-              placeholder="Leave a memory..."
-              maxLength={280}
+              className={cn(
+                "memory-message-paper min-h-[13rem] resize-y rounded-[0.95rem] border-2 px-4 py-4 text-base outline-none transition sm:min-h-[15rem]",
+                paperClassName,
+                penClassName,
+              )}
+              maxLength={1200}
+              name="message"
+              onChange={(event) => setMessage(event.target.value)}
+              placeholder="Message"
+              required
+              value={message}
             />
           </Field>
 
-          <p className="text-xs leading-5 text-slate-400">
-            Uploads are saved securely to Supabase Storage. Max size:{" "}
-            {Math.round(maxUploadSizeBytes / 1024 / 1024)}MB.
+          <section className="memory-scrapbook-section grid gap-3 rounded-[1.25rem] border-2 border-dashed p-3 sm:p-4">
+            <Field
+              label="Optional Photo"
+              hint={`JPG, PNG, or WebP. Max ${Math.round(maxUploadSizeBytes / 1024 / 1024)}MB.`}
+            >
+              <label className="memory-upload-dropzone flex cursor-pointer items-center gap-3 rounded-[1rem] border-2 border-dashed px-3 py-3 transition sm:gap-4 sm:px-4">
+                <span className="memory-upload-icon-frame flex h-14 w-14 shrink-0 items-center justify-center rounded-[0.9rem]">
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className="h-11 w-11 object-contain"
+                    height={44}
+                    src="/memory-board-actions/upload.png"
+                    width={44}
+                  />
+                </span>
+                <span className="grid min-w-0 flex-1 gap-1">
+                  <span className="text-sm font-black text-[#2b1d17]">
+                    {file ? "Photo selected" : "Upload a photo"}
+                  </span>
+                  <span className="memory-upload-meta truncate text-xs font-semibold">
+                    {file ? file.name : "No photo selected"}
+                  </span>
+                </span>
+                <span className="memory-upload-button shrink-0 rounded-full px-3 py-2 text-xs font-black">
+                  Choose
+                </span>
+                <input
+                  accept={acceptedImageTypes.join(",")}
+                  className="sr-only"
+                  name="photo"
+                  onChange={(event) => {
+                    handleFileChange(event.target.files?.[0] ?? null);
+                  }}
+                  ref={fileInputRef}
+                  type="file"
+                />
+              </label>
+            </Field>
+
+            {file ? (
+              <div className="grid gap-2">
+                <div>
+                  <p className="text-sm font-black text-[#2b1d17]">Doodle on photo</p>
+                  <p className="mt-1 text-xs font-semibold text-[#725a4d]">
+                    {hasDoodles ? "Doodles will be saved into the uploaded image." : "Optional"}
+                  </p>
+                </div>
+                <PhotoDoodleEditor
+                  authorDisplayName="You"
+                  caption={message}
+                  createdAt={createdAt}
+                  file={file}
+                  imageUrl={previewUrl}
+                  onDoodleStateChange={setHasDoodles}
+                  ref={doodleEditorRef}
+                />
+              </div>
+            ) : null}
+          </section>
+
+          <p className="text-xs leading-5 text-[#725a4d]">
             {officialEvent
-              ? " Official event posts can include up to 3 stickers."
-              : " Stickers can still be added from the memory board after posting."}
+              ? "Official event posts can still use up to 3 stickers on the board."
+              : "Stickers can still be added from the memory board after posting."}
           </p>
+
           {submitError ? (
-            <p className="rounded-2xl border border-rose-300/20 bg-rose-400/10 px-4 py-3 text-sm font-medium text-rose-100">
+            <p className="rounded-[1rem] border-2 border-rose-300/60 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
               {submitError}
             </p>
           ) : null}
 
           <MemoryPostSubmitButton
-            fileSelected={Boolean(file)}
+            message={message}
             preparing={isPreparingPhoto}
           />
         </form>

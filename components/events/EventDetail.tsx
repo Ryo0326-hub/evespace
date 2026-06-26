@@ -63,16 +63,12 @@ export function EventDetail({
                 </LinkButton>
               </Show>
               <Show when="signed-out">
-                <SignInButton mode="modal">
-                  <button className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-white/15 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15 sm:w-auto">
-                    Post a Memory
-                  </button>
-                </SignInButton>
-                <SignInButton mode="modal">
-                  <button className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-white/15 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-white/15 sm:w-auto">
-                    Manage Event
-                  </button>
-                </SignInButton>
+                <span className="event-detail-sign-in-trigger">
+                  <SignInButton mode="modal">Post a Memory</SignInButton>
+                </span>
+                <span className="event-detail-sign-in-trigger">
+                  <SignInButton mode="modal">Manage Event</SignInButton>
+                </span>
               </Show>
               <ShareButton className="w-full sm:w-auto" path={`/events/${event.slug}`} />
             </div>

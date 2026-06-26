@@ -385,7 +385,7 @@ export const PhotoDoodleEditor = forwardRef<
 
   return (
     <section className="grid min-w-0 gap-3">
-      <article className="min-w-0 overflow-hidden rounded-2xl border-2 border-black bg-white p-3 text-black sm:p-4">
+      <article className="memory-doodle-card min-w-0 overflow-hidden rounded-[1rem] border-2 bg-white p-3 text-black sm:p-4">
         <header className="flex min-h-12 items-center justify-between gap-3 px-1 pb-3">
           <div className="min-w-0">
             <p className="truncate text-xs font-semibold uppercase tracking-[0.2em] text-slate-700">
@@ -395,7 +395,7 @@ export const PhotoDoodleEditor = forwardRef<
           </div>
         </header>
 
-        <div className="overflow-hidden rounded-xl border border-black bg-white">
+        <div className="memory-doodle-canvas-frame overflow-hidden rounded-[0.85rem] border-2 bg-white">
           {imageUrl ? (
             <canvas
               aria-label="Doodle drawing surface"
@@ -422,12 +422,12 @@ export const PhotoDoodleEditor = forwardRef<
 
         <div className="px-1 pb-1 pt-4">
           <p className="whitespace-pre-wrap break-words text-sm leading-6 text-black">
-            {caption || "Your note will appear here."}
+            {caption || "Your message will appear here."}
           </p>
         </div>
       </article>
 
-      <div className="grid min-w-0 gap-3 overflow-hidden rounded-3xl border border-white/10 bg-slate-950/55 p-2.5 sm:p-4">
+      <div className="memory-doodle-tools grid min-w-0 gap-3 overflow-hidden rounded-[1rem] border-2 p-2.5 sm:p-4">
         <div
           className="flex min-w-0 flex-wrap items-center gap-2 max-[360px]:gap-1.5"
           role="radiogroup"
@@ -438,9 +438,9 @@ export const PhotoDoodleEditor = forwardRef<
               aria-label={`Use ${color.name} brush`}
               aria-pressed={brushColor === color.value}
               className={cn(
-                "h-8 w-8 shrink-0 rounded-full border border-white/30 transition focus:outline-none focus:ring-2 focus:ring-cyan-200 max-[360px]:h-7 max-[360px]:w-7",
+                "h-8 w-8 shrink-0 rounded-full border transition focus:outline-none focus:ring-2 max-[360px]:h-7 max-[360px]:w-7",
                 brushColor === color.value &&
-                  "scale-110 ring-2 ring-cyan-200 ring-offset-2 ring-offset-slate-950",
+                  "scale-110 ring-2 ring-[#7a5b49] ring-offset-2 ring-offset-[#fffaf2]",
               )}
               key={color.value}
               onClick={() => setBrushColor(color.value)}
@@ -452,14 +452,14 @@ export const PhotoDoodleEditor = forwardRef<
         </div>
 
         <div className="grid min-w-0 grid-cols-1 gap-2 min-[430px]:grid-cols-[auto_minmax(0,1fr)]">
-          <div className="grid min-w-0 grid-cols-4 gap-1 rounded-full border border-white/10 bg-white/[0.06] p-1">
+          <div className="grid min-w-0 grid-cols-4 gap-1 rounded-full border p-1">
             {brushSizes.map((size) => (
               <button
                 aria-label={`Use ${size}px brush`}
                 aria-pressed={brushSize === size}
                 className={cn(
-                  "flex h-8 min-w-0 items-center justify-center rounded-full text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-200",
-                  brushSize === size && "bg-white text-slate-950 hover:bg-white",
+                  "memory-doodle-size-button flex h-8 min-w-0 items-center justify-center rounded-full transition focus:outline-none focus:ring-2",
+                  brushSize === size && "is-selected",
                 )}
                 key={size}
                 onClick={() => setBrushSize(size)}
@@ -476,7 +476,7 @@ export const PhotoDoodleEditor = forwardRef<
 
           <div className="grid min-w-0 grid-cols-2 gap-2">
             <button
-              className="min-h-9 min-w-0 rounded-full border border-white/10 bg-white/[0.07] px-3 text-xs font-semibold text-white transition hover:bg-white/15 disabled:cursor-not-allowed disabled:opacity-45"
+              className="memory-doodle-tool-button min-h-9 min-w-0 rounded-full border px-3 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-45"
               disabled={strokes.length === 0}
               onClick={undoStroke}
               type="button"
@@ -484,7 +484,7 @@ export const PhotoDoodleEditor = forwardRef<
               Undo
             </button>
             <button
-              className="min-h-9 min-w-0 rounded-full border border-rose-200/20 bg-rose-400/10 px-3 text-xs font-semibold text-rose-100 transition hover:bg-rose-400/20 disabled:cursor-not-allowed disabled:opacity-45"
+              className="memory-doodle-tool-button memory-doodle-clear-button min-h-9 min-w-0 rounded-full border px-3 text-xs font-bold transition disabled:cursor-not-allowed disabled:opacity-45"
               disabled={strokes.length === 0}
               onClick={clearStrokes}
               type="button"

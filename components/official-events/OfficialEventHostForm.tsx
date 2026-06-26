@@ -553,7 +553,7 @@ export function OfficialEventHostForm({
           <p className="evespace-section-kicker">Hero Block</p>
           <h2 className="evespace-section-title mt-2">Banner background</h2>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {BOARD_THEME_OPTIONS.map((theme) => {
             const background = getBoardTheme(theme);
             const selected = selectedHeroTheme === theme;

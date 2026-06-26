@@ -40,18 +40,23 @@ export function UserPlanet({
             <div className="flex min-w-0 items-center gap-4">
               <ProfileAvatar profile={profile} />
               <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-xs font-semibold uppercase tracking-[0.32em] text-cyan-100">
-                    {isSelf ? "Your Planet" : "User Planet"}
-                  </p>
-                  {premiumStatus.isPremium ? (
-                    <span className="rounded-full border border-amber-200/45 bg-amber-200/15 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-amber-100">
+                {premiumStatus.isPremium ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/45 bg-amber-200/15 px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-amber-100">
+                      <Image
+                        alt=""
+                        aria-hidden="true"
+                        className="h-5 w-5 object-contain"
+                        height={20}
+                        src="/dashboard-icons/premium.png"
+                        width={20}
+                      />
                       Premium
                     </span>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
                 {meta || (isSelf && profile.email) ? (
-                  <p className="mt-1 truncate text-sm text-slate-400">
+                  <p className={premiumStatus.isPremium ? "mt-1 truncate text-sm text-slate-400" : "truncate text-sm text-slate-400"}>
                     {meta ?? profile.email}
                   </p>
                 ) : null}
@@ -72,7 +77,15 @@ export function UserPlanet({
             {actionSlot ? <div className="mt-7">{actionSlot}</div> : null}
             {isSelf ? (
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <LinkButton className="w-full shadow-none sm:w-auto" href="/dashboard">
+                <LinkButton className="w-full gap-2 shadow-none sm:w-auto" href="/dashboard">
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className="h-7 w-7 shrink-0 object-contain"
+                    height={28}
+                    src="/dashboard-icons/dashboard.png"
+                    width={28}
+                  />
                   Open Dashboard
                 </LinkButton>
               </div>

@@ -40,6 +40,9 @@ export const stickyNoteStyles: StickyNoteStyle[] = [
   "pink",
   "blue",
   "glass",
+  "sky",
+  "mint",
+  "lavender",
 ];
 
 export const moderationModes: ModerationMode[] = ["pre_approval", "post_first"];
