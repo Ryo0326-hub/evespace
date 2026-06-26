@@ -6,7 +6,7 @@ import {
   type MemoryBoardAction,
 } from "@/components/board/MemoryBoardActionBar";
 import { MemoryBoard } from "@/components/board/MemoryBoard";
-import { DEFAULT_BOARD_THEME, getBoardTheme } from "@/lib/board-themes";
+import { getBoardTheme } from "@/lib/board-themes";
 import { sharingScopeLabel } from "@/lib/boards/labels";
 import { ensureUserProfile } from "@/lib/auth/ensure-user-profile";
 import {
@@ -47,10 +47,7 @@ export default async function PrivateBoardPage({
       : Promise.resolve<"none">("none"),
   ]);
 
-  const viewerOwnsBoard = Boolean(profile?.id && board.ownerProfileId === profile.id);
-  const background = getBoardTheme(
-    viewerOwnsBoard ? board.boardBackgroundTheme : DEFAULT_BOARD_THEME,
-  );
+  const background = getBoardTheme(board.boardBackgroundTheme);
   const actionBarActions: MemoryBoardAction[] = [];
 
   if (canPost) {
@@ -98,9 +95,9 @@ export default async function PrivateBoardPage({
   );
 
   return (
-    <main className={`${background.pageClassName} memory-board-main min-h-dvh overflow-x-clip overflow-y-visible px-3 pb-36 pt-0 text-slate-950 sm:px-6 md:pb-6 md:pt-3 lg:px-8`}>
-      <div className="mx-auto min-w-0 max-w-7xl">
-        <div className="memory-board-page-shell min-w-0 md:grid md:grid-cols-[6.25rem_minmax(0,1fr)] md:items-start md:gap-4">
+    <main className={`${background.pageClassName} memory-board-main h-[calc(100dvh-4rem)] overflow-x-clip overflow-y-auto px-3 pb-36 pt-0 text-slate-950 sm:px-6 md:pt-3 lg:px-8`}>
+      <div className="min-w-0 w-full">
+        <div className="memory-board-page-shell min-w-0 w-full">
           <MemoryBoardActionBar actions={actionBarActions} />
 
           <div className="memory-board-content-stack min-w-0">

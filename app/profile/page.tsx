@@ -14,11 +14,6 @@ export default async function ProfilePage() {
 
   return (
     <main className="cosmic-bg evespace-page overflow-hidden">
-      <div className="mx-auto mb-6 flex w-full max-w-7xl items-center justify-between gap-4">
-        <p className="evespace-kicker">
-          Your Planet
-        </p>
-      </div>
       <UserPlanet events={events} profile={profile} />
     </main>
   );

@@ -35,7 +35,7 @@ export type OfficialEventPostingPermission =
   | "signed_in_users"
   | "approved_users";
 
-export type BoardThemeId = "plain" | "camo" | "pastel" | "city";
+export type BoardThemeId = "paper" | "sage" | "sky" | "rose" | "lavender";
 
 export type BoardBackgroundTheme = BoardThemeId;
 
@@ -52,7 +52,15 @@ export type StickyNoteStyle =
   | "yellow"
   | "pink"
   | "blue"
-  | "glass";
+  | "glass"
+  | "sky"
+  | "mint"
+  | "lavender";
+
+export type MemoryPenStyle =
+  | "classic_pen"
+  | "marker"
+  | "fountain_pen";
 
 export type StickerCategory =
   | "pixel"
@@ -225,6 +233,7 @@ export type MemoryPost = {
   overlayStickers: PlacedSticker[];
   frameStyle: FrameStyle;
   stickyNoteStyle: StickyNoteStyle;
+  memoryPenStyle: MemoryPenStyle;
   stickerId: string | null;
   boardX: number | null;
   boardY: number | null;

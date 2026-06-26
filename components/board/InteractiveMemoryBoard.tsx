@@ -369,12 +369,16 @@ export function InteractiveMemoryBoard({
       window.removeEventListener("pointercancel", finishDrag);
       ghost.remove();
 
+      if (!didMove) {
+        return;
+      }
+
       addSticker(stickerId, {
-        clientX: didMove ? latestPointer.x : undefined,
-        clientY: didMove ? latestPointer.y : undefined,
-        dropOffsetX: didMove ? dropOffset.x : undefined,
-        dropOffsetY: didMove ? dropOffset.y : undefined,
-        requireDropTarget: didMove,
+        clientX: latestPointer.x,
+        clientY: latestPointer.y,
+        dropOffsetX: dropOffset.x,
+        dropOffsetY: dropOffset.y,
+        requireDropTarget: true,
       });
     }
 
@@ -432,7 +436,6 @@ export function InteractiveMemoryBoard({
         hint={stickerStoreHint}
         maxStickersPerPost={maxStickersPerPost}
         canUsePremiumStickers={canUsePremiumStickers}
-        onAddSticker={(stickerId) => addSticker(stickerId)}
         onClose={() => setStoreOpen(false)}
         onStartStickerDrag={startStickerDrag}
         open={storeOpen}

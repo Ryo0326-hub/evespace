@@ -1,4 +1,5 @@
 import { isRegisteredStickerId } from "@/lib/stickers/sticker-registry";
+import { normalizeMemoryPenStyle } from "@/lib/memory-post-style.mjs";
 import { toBoardThemeId } from "@/lib/board-themes";
 import type {
   Board,
@@ -224,9 +225,13 @@ export function mapMemoryPost(row: DbEvent): MemoryPost {
       row.sticky_note_style === "yellow" ||
       row.sticky_note_style === "pink" ||
       row.sticky_note_style === "blue" ||
-      row.sticky_note_style === "glass"
+      row.sticky_note_style === "glass" ||
+      row.sticky_note_style === "sky" ||
+      row.sticky_note_style === "mint" ||
+      row.sticky_note_style === "lavender"
         ? row.sticky_note_style
         : "default",
+    memoryPenStyle: normalizeMemoryPenStyle(row.message_pen_style),
     stickerId: (row.sticker_id as string | null) ?? null,
     boardX: (row.board_x as number | null) ?? null,
     boardY: (row.board_y as number | null) ?? null,

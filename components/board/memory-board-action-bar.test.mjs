@@ -4,10 +4,10 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
 const actionIconPaths = [
-  "public/memory-board-actions/create-button.png",
-  "public/memory-board-actions/edit-button.png",
-  "public/memory-board-actions/stickers-button.png",
-  "public/memory-board-actions/back-button.png",
+  "public/memory-board-actions/create-v2.png",
+  "public/memory-board-actions/edit-v2.png",
+  "public/memory-board-actions/stickers-v2.png",
+  "public/memory-board-actions/back-v2.png",
 ];
 
 const boardRoutePaths = [
@@ -36,7 +36,7 @@ describe("memory board action bar integration", () => {
 
     for (const { iconPath, width, height } of iconSizes) {
       assert.equal(width, height, `${iconPath} should be square`);
-      assert.ok(width >= 512, `${iconPath} should use the large cohesive artwork`);
+      assert.ok(width >= 100, `${iconPath} should use the supplied cohesive artwork`);
     }
 
     assert.equal(
@@ -65,10 +65,20 @@ describe("memory board action bar integration", () => {
         /StickerStoreButton/,
         `${routePath} should not import the old sticker store button`,
       );
+      assert.doesNotMatch(
+        source,
+        /md:grid-cols-\[6\.25rem_minmax\(0,1fr\)\]|md:grid/,
+        `${routePath} should not reserve a desktop rail column for the action bar`,
+      );
       assert.match(
         source,
-        /memory-board-page-shell[^"]*md:grid[^"]*md:grid-cols-\[6\.25rem_minmax\(0,1fr\)\]/,
-        `${routePath} should reserve a desktop rail column for the action bar`,
+        /<div className="min-w-0 w-full">/,
+        `${routePath} should let the memory board content use the full board width`,
+      );
+      assert.doesNotMatch(
+        source,
+        /md:pb-6/,
+        `${routePath} should keep bottom padding for the fixed action bar on desktop too`,
       );
     }
   });
@@ -76,10 +86,23 @@ describe("memory board action bar integration", () => {
   it("keeps responsive positioning and button alignment on the component itself", async () => {
     const source = await readFile("components/board/MemoryBoardActionBar.tsx", "utf8");
 
+    for (const iconPath of actionIconPaths) {
+      assert.match(
+        source,
+        new RegExp(iconPath.replace(/^public/, "").replaceAll("/", "\\/")),
+        `action bar should reference ${iconPath}`,
+      );
+    }
+
     assert.match(
       source,
-      /fixed[^"]*bottom-0[^"]*md:sticky/,
-      "the action shell should carry mobile fixed and desktop sticky positioning classes",
+      /fixed[^"]*bottom-0[^"]*justify-center/,
+      "the action shell should stay fixed to the bottom and centered at every viewport size",
+    );
+    assert.doesNotMatch(
+      source,
+      /md:sticky|md:top-6|md:bottom-auto|md:w-\[6rem\]|md:flex-col/,
+      "the action bar should not switch into a desktop side rail",
     );
     assert.match(
       source,
@@ -90,6 +113,13 @@ describe("memory board action bar integration", () => {
       source,
       /shrink-0[^"]*items-center[^"]*justify-center/,
       "icon frames should keep each icon centered in a stable box",
+    );
+
+    const globalsSource = await readFile("app/globals.css", "utf8");
+    assert.doesNotMatch(
+      globalsSource,
+      /@media \(min-width: 768px\)[\s\S]*\.memory-board-action-shell[\s\S]*position:\s*sticky;/,
+      "global CSS should not restyle the action shell as a desktop sticky rail",
     );
   });
 });

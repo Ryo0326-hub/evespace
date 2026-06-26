@@ -41,7 +41,7 @@ export function BoardBackgroundPicker({
           Choose the visual world this memory board will use everywhere.
         </p>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {BOARD_THEME_OPTIONS.map((theme) => {
           const background = getBoardTheme(theme);
           const isSelected = selectedTheme === theme;

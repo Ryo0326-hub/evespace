@@ -33,12 +33,6 @@ export default async function ExplorePage(props: {
   return (
     <main className="cosmic-bg evespace-page">
       <div className="evespace-shell max-w-5xl">
-        <header className="evespace-page-header">
-          <p className="evespace-kicker">
-            Explore
-          </p>
-        </header>
-
         <SearchBar />
 
         {suggestedProfiles.length === 0 ? (
@@ -50,10 +44,7 @@ export default async function ExplorePage(props: {
           <section className="evespace-section">
             <div className="evespace-section-header">
               <div>
-                <p className="evespace-section-kicker">
-                  Suggested
-                </p>
-                <h2 className="evespace-section-title mt-1">
+                <h2 className="evespace-section-title">
                   Suggested people
                 </h2>
               </div>

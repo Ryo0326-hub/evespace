@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Image from "next/image";
 import {
   createBillingPortalSessionAction,
   createPremiumCheckoutSessionAction,
@@ -61,7 +62,15 @@ export default async function PremiumPage({
                 <p className="mt-2 text-sm text-slate-400">per month</p>
               </div>
               {premiumStatus.isPremium ? (
-                <span className="rounded-full border border-amber-200/45 bg-amber-200/15 px-3 py-1 text-xs font-semibold text-amber-100">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200/45 bg-amber-200/15 px-3 py-1 text-xs font-semibold text-amber-100">
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className="h-5 w-5 object-contain"
+                    height={20}
+                    src="/dashboard-icons/premium.png"
+                    width={20}
+                  />
                   Premium Active
                 </span>
               ) : null}

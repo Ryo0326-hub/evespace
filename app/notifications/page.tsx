@@ -26,12 +26,6 @@ export default async function NotificationsPage() {
   return (
     <main className="cosmic-bg evespace-page">
       <div className="evespace-shell max-w-3xl">
-        <header className="evespace-page-header">
-          <p className="evespace-kicker">
-            Notifications
-          </p>
-        </header>
-
         {notifications.length === 0 ? (
           <EmptyState
             title="No notifications yet."

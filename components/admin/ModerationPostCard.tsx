@@ -21,7 +21,7 @@ export function ModerationPostCard({
           {post.authorDisplayName || "Anonymous"}
         </h3>
         <p className="mt-3 text-sm leading-6 text-slate-300">
-          {post.caption || "No caption provided."}
+          {post.caption || "No message provided."}
         </p>
         <form action={action} className="mt-6 flex flex-wrap gap-3">
           <input name="postId" type="hidden" value={post.id} />

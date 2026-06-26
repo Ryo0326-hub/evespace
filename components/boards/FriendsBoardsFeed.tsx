@@ -19,7 +19,6 @@ export function FriendsBoardsFeed({ boards }: { boards: Board[] }) {
           board={board}
           canEdit={false}
           key={board.id}
-          themeOverride="plain"
         />
       ))}
     </div>

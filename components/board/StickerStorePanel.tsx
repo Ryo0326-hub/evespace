@@ -16,7 +16,6 @@ type PanelPosition = {
 export function StickerStorePanel({
   open,
   onClose,
-  onAddSticker,
   onStartStickerDrag,
   canUsePremiumStickers,
   selectedStickerCount,
@@ -26,7 +25,6 @@ export function StickerStorePanel({
 }: {
   open: boolean;
   onClose: () => void;
-  onAddSticker: (stickerId: StickerId) => void;
   onStartStickerDrag: (
     event: React.PointerEvent<HTMLDivElement>,
     stickerId: StickerId,
@@ -151,7 +149,7 @@ export function StickerStorePanel({
         transform: `translate3d(${panelOffset.x}px, ${panelOffset.y}px, 0)`,
       }}
     >
-      <section className="memory-board-sticker-store flex max-h-[35vh] flex-col overflow-hidden rounded-[1.35rem] bg-clip-padding sm:max-h-[28rem] sm:rounded-[1.5rem]">
+      <section className="memory-board-sticker-store flex max-h-[calc(100dvh-10.5rem)] flex-col overflow-hidden rounded-[1.35rem] bg-clip-padding sm:max-h-[28rem] sm:rounded-[1.5rem]">
         <header className="grid shrink-0 gap-3 border-b-2 border-dashed border-black/15 px-3 py-3">
           <div className="flex items-start justify-between gap-3">
             <div
@@ -196,7 +194,7 @@ export function StickerStorePanel({
           </p>
         ) : null}
 
-        <div className="flex-1 overflow-y-auto p-3 pb-10">
+        <div className="memory-board-sticker-store-scroll flex-1 min-h-0 overflow-y-auto p-3 pb-10">
           {!canUsePremiumStickers ? (
             <div className="memory-board-premium-lock mb-3 rounded-2xl border-2 border-black/15 bg-[#fff4a8] px-3 py-3 text-sm font-bold text-black">
               <p>EveSpace Premium?</p>
@@ -244,24 +242,21 @@ export function StickerStorePanel({
 
           <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
             {visibleStickers.map((sticker) => (
-              <button
-                className="touch-none rounded-[1rem] border border-transparent p-2 text-center transition hover:border-black/10 hover:bg-white/75"
-                disabled={!canUsePremiumStickers}
+              <div
+                aria-disabled={!canUsePremiumStickers}
+                className={cn(
+                  "rounded-[1rem] border border-transparent p-2 text-center transition hover:border-black/10 hover:bg-white/75",
+                  !canUsePremiumStickers && "opacity-60",
+                )}
                 key={sticker.id}
-                onKeyDown={(event) => {
-                  if (!canUsePremiumStickers) {
-                    return;
-                  }
-
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    onAddSticker(sticker.id);
-                  }
-                }}
-                type="button"
               >
                 <div
-                  className="mx-auto flex size-[50px] touch-none cursor-grab items-center justify-center active:cursor-grabbing"
+                  className={cn(
+                    "mx-auto flex size-[50px] items-center justify-center",
+                    canUsePremiumStickers
+                      ? "touch-none cursor-grab active:cursor-grabbing"
+                      : "cursor-not-allowed",
+                  )}
                   data-sticker-preview
                   onPointerDown={(event) => {
                     if (canUsePremiumStickers) {
@@ -274,7 +269,7 @@ export function StickerStorePanel({
                 <p className="mt-2 line-clamp-1 text-xs font-black text-black">
                   {sticker.name}
                 </p>
-              </button>
+              </div>
             ))}
           </div>
 

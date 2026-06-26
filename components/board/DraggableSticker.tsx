@@ -16,6 +16,9 @@ function getRelativePosition(position: number, availableSpace: number) {
   return clamp(position / availableSpace, 0, 1);
 }
 
+const stickerDragPressDelayMs = 220;
+const stickerDragCancelDistance = 9;
+
 export function DraggableSticker({
   sticker,
   containerRef,
@@ -75,10 +78,8 @@ export function DraggableSticker({
       return;
     }
 
-    event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    setIsDragging(true);
-
+    const dragHandle = event.currentTarget;
+    const pointerId = event.pointerId;
     const containerRect = containerElement.getBoundingClientRect();
     const stickerRect = stickerElement.getBoundingClientRect();
     const availableX = Math.max(1, containerRect.width - sticker.size - padding * 2);
@@ -95,16 +96,65 @@ export function DraggableSticker({
       x: event.clientX - stickerRect.left,
       y: event.clientY - stickerRect.top,
     };
+    let dragStarted = false;
     let didMove = false;
 
+    function beginDrag() {
+      dragStarted = true;
+      setIsDragging(true);
+      setShowDelete(false);
+
+      if (!dragHandle.hasPointerCapture(pointerId)) {
+        dragHandle.setPointerCapture(pointerId);
+      }
+    }
+
+    function cleanupDrag(toggleDelete: boolean) {
+      window.clearTimeout(pressTimerId);
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", finishDrag);
+      window.removeEventListener("pointercancel", finishDrag);
+
+      if (frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+
+      pendingRef.current = null;
+
+      if (dragStarted) {
+        setIsDragging(false);
+      }
+
+      if (dragHandle.hasPointerCapture(pointerId)) {
+        dragHandle.releasePointerCapture(pointerId);
+      }
+
+      if (toggleDelete) {
+        setShowDelete((visible) => !visible);
+      }
+    }
+
+    const pressTimerId = window.setTimeout(() => {
+      beginDrag();
+    }, stickerDragPressDelayMs);
+
     function handlePointerMove(moveEvent: PointerEvent) {
+      const delta =
+        Math.abs(moveEvent.clientX - originPointer.x) +
+        Math.abs(moveEvent.clientY - originPointer.y);
+
+      if (!dragStarted) {
+        if (delta > stickerDragCancelDistance) {
+          cleanupDrag(false);
+        }
+
+        return;
+      }
+
       moveEvent.preventDefault();
 
-      if (
-        Math.abs(moveEvent.clientX - originPointer.x) +
-          Math.abs(moveEvent.clientY - originPointer.y) >
-        4
-      ) {
+      if (delta > 4) {
         didMove = true;
       }
 
@@ -135,25 +185,20 @@ export function DraggableSticker({
       });
     }
 
-    function finishDrag() {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", finishDrag);
-      window.removeEventListener("pointercancel", finishDrag);
-
-      if (frameRef.current !== null) {
-        window.cancelAnimationFrame(frameRef.current);
-        frameRef.current = null;
-      }
-
-      const latest = pendingRef.current ?? origin;
-      pendingRef.current = null;
-      setIsDragging(false);
-
-      if (!didMove) {
-        setShowDelete((visible) => !visible);
+    function finishDrag(upEvent: PointerEvent) {
+      if (!dragStarted) {
+        cleanupDrag(upEvent.type === "pointerup");
         return;
       }
 
+      const latest = pendingRef.current ?? origin;
+
+      if (!didMove) {
+        cleanupDrag(upEvent.type === "pointerup");
+        return;
+      }
+
+      cleanupDrag(false);
       setShowDelete(false);
       moveSticker?.(
         sticker.id,
@@ -170,7 +215,7 @@ export function DraggableSticker({
   return (
     <div
       aria-label="Move sticker"
-      className={`group absolute touch-none ${
+      className={`group absolute touch-pan-y ${
         onMove ? "cursor-grab active:cursor-grabbing" : "pointer-events-none"
       } ${isDragging ? "z-30" : "z-10"}`}
       onPointerDown={handlePointerDown}
