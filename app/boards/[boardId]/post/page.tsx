@@ -55,7 +55,7 @@ export default async function CreatePrivateBoardPostPage({
 
   return (
     <main className={`${background.pageClassName} memory-create-page min-h-screen overflow-x-hidden px-3 py-4 sm:px-6 sm:py-6 lg:px-8`}>
-      <div className="mx-auto w-full max-w-5xl min-w-0">
+      <div className="evespace-form-shell">
         <LinkButton
           className="memory-create-back-button w-full sm:w-auto"
           href={`/boards/${board.id}`}

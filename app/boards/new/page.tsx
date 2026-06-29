@@ -25,7 +25,7 @@ export default async function NewBoardPage({
       className={`${defaultTheme.pageClassName} min-h-screen overflow-x-clip px-4 py-8 text-black sm:px-8`}
       data-board-theme-page
     >
-      <div className="mx-auto min-w-0 max-w-4xl">
+      <div className="evespace-form-shell">
         <LinkButton
           className="memory-board-soft-button w-full sm:w-auto"
           href="/dashboard"

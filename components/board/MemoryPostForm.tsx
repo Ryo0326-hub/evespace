@@ -37,15 +37,17 @@ function getPenClassName(style: MemoryPenStyle) {
 }
 
 function MemoryPostSubmitButton({
+  hasPhoto,
   message,
   preparing,
 }: {
+  hasPhoto: boolean;
   message: string;
   preparing: boolean;
 }) {
   const { pending } = useFormStatus();
   const busy = pending || preparing;
-  const ready = message.trim().length > 0;
+  const ready = message.trim().length > 0 || hasPhoto;
 
   return (
     <Button
@@ -104,7 +106,7 @@ export function MemoryPostForm({
       return;
     }
 
-    if (!message.trim()) {
+    if (!message.trim() && !file) {
       event.preventDefault();
       return;
     }
@@ -161,7 +163,7 @@ export function MemoryPostForm({
   }
 
   return (
-    <div className="memory-post-create-shell w-full max-w-5xl min-w-0 overflow-hidden">
+    <div className="memory-post-create-shell mx-auto w-full min-w-0 overflow-hidden">
       <Card className="memory-post-create-card w-full min-w-0 overflow-hidden p-4 shadow-none max-[360px]:p-3 sm:p-5 lg:p-6">
         <form
           action={action}
@@ -234,8 +236,7 @@ export function MemoryPostForm({
               maxLength={1200}
               name="message"
               onChange={(event) => setMessage(event.target.value)}
-              placeholder="Message"
-              required
+              placeholder="Message (optional)"
               value={message}
             />
           </Field>
@@ -314,6 +315,7 @@ export function MemoryPostForm({
           ) : null}
 
           <MemoryPostSubmitButton
+            hasPhoto={Boolean(file)}
             message={message}
             preparing={isPreparingPhoto}
           />

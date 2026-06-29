@@ -400,7 +400,7 @@ export const PhotoDoodleEditor = forwardRef<
             <canvas
               aria-label="Doodle drawing surface"
               className={cn(
-                "block aspect-[4/3] h-auto w-full touch-none select-none object-cover overscroll-contain [-webkit-touch-callout:none]",
+                "memory-doodle-canvas block touch-none select-none overscroll-contain [-webkit-touch-callout:none]",
                 imageReady ? "cursor-crosshair" : "cursor-wait opacity-70",
               )}
               height={canvasSize?.height ?? 1}
@@ -414,7 +414,7 @@ export const PhotoDoodleEditor = forwardRef<
               width={canvasSize?.width ?? 1}
             />
           ) : (
-            <div className="flex aspect-[4/3] items-center justify-center bg-slate-100 px-4 text-center text-sm font-semibold text-slate-500">
+            <div className="flex min-h-40 items-center justify-center bg-slate-100 px-4 text-center text-sm font-semibold text-slate-500">
               Upload a photo to doodle on it.
             </div>
           )}

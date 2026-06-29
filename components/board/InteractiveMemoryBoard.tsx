@@ -113,7 +113,7 @@ export function InteractiveMemoryBoard({
     }
 
     if (!canUsePremiumStickers) {
-      return "EveSpace Premium is required to add and move stickers.";
+      return "Sticker packs are coming later once the artist catalog is ready.";
     }
 
     if (!firstOwnedPostId) {
@@ -169,7 +169,7 @@ export function InteractiveMemoryBoard({
   ) {
     if (!viewerProfileId || !canUsePremiumStickers) {
       if (viewerProfileId && !canUsePremiumStickers) {
-        setLimitWarning("EveSpace Premium is required to use stickers.");
+        setLimitWarning("Sticker packs are coming later.");
       }
       return;
     }
@@ -299,7 +299,7 @@ export function InteractiveMemoryBoard({
   ) {
     if (!viewerProfileId || !canUsePremiumStickers) {
       if (viewerProfileId && !canUsePremiumStickers) {
-        setLimitWarning("EveSpace Premium is required to use stickers.");
+        setLimitWarning("Sticker packs are coming later.");
       }
       return;
     }
@@ -340,8 +340,11 @@ export function InteractiveMemoryBoard({
     ghost.style.position = "fixed";
     ghost.style.top = "0";
     ghost.style.transform = `translate3d(${visualRect.left}px, ${visualRect.top}px, 0)`;
+    ghost.style.userSelect = "none";
     ghost.style.width = `${dragGhostSize}px`;
     ghost.style.zIndex = "125";
+    ghost.style.setProperty("-webkit-touch-callout", "none");
+    ghost.style.setProperty("-webkit-user-drag", "none");
     document.body.appendChild(ghost);
 
     function handlePointerMove(moveEvent: PointerEvent) {
@@ -401,7 +404,7 @@ export function InteractiveMemoryBoard({
 
       <div className="memory-grid w-full touch-pan-y pt-0">
         {posts.length === 0 ? (
-          <div className="memory-board-empty-state mx-auto w-full max-w-xl rounded-[2rem] p-6 text-center">
+          <div className="memory-board-empty-state col-span-full mx-auto w-full rounded-[2rem] p-5 text-center sm:p-8">
             <p className="text-lg font-black">No memories have been posted yet.</p>
             <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
               Be the first to leave a little moment on this board.
@@ -411,6 +414,9 @@ export function InteractiveMemoryBoard({
           posts.map((post) => (
             <MemoryCard
               key={post.id}
+              canEditPost={Boolean(
+                viewerProfileId && post.profileId === viewerProfileId,
+              )}
               canDeletePost={Boolean(
                 viewerProfileId && post.profileId === viewerProfileId,
               )}

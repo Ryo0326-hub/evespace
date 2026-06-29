@@ -2,7 +2,6 @@
 
 import { createPortal } from "react-dom";
 import { useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { StickerVisual } from "@/components/board/StickerVisual";
 import { STICKER_CATEGORIES, STICKERS } from "@/lib/stickers/sticker-registry";
 import { cn } from "@/lib/utils";
@@ -197,13 +196,10 @@ export function StickerStorePanel({
         <div className="memory-board-sticker-store-scroll flex-1 min-h-0 overflow-y-auto p-3 pb-10">
           {!canUsePremiumStickers ? (
             <div className="memory-board-premium-lock mb-3 rounded-2xl border-2 border-black/15 bg-[#fff4a8] px-3 py-3 text-sm font-bold text-black">
-              <p>EveSpace Premium?</p>
-              <Link
-                className="memory-board-premium-link mt-3 inline-flex min-h-10 items-center justify-center rounded-full border-2 border-black bg-white px-4 text-xs font-black text-black transition hover:bg-[#fff8c8]"
-                href="/premium"
-              >
-                Unlock Premium
-              </Link>
+              <p>Sticker packs are coming later.</p>
+              <p className="mt-2 text-xs leading-5 text-slate-700">
+                Payment setup is paused until the artist-made sticker catalog is ready.
+              </p>
             </div>
           ) : null}
 

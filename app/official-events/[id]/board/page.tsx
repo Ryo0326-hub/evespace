@@ -89,8 +89,8 @@ export default async function OfficialEventMemoryBoardPage({
                 <span className="memory-board-title-mark">{event.title}</span>
               </h1>
               <p className="mt-5 text-sm font-medium leading-7 text-slate-700 sm:text-base">
-                Browse approved memories from this official event. Official event
-                posts can include up to 3 stickers.
+                Browse approved memories from this official event. Artist-made
+                sticker packs will be available later.
               </p>
             </header>
 

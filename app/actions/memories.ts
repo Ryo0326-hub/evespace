@@ -83,11 +83,11 @@ async function createBoardMemoryPost(
     throw new Error("Memory posting is not configured.");
   }
 
-  if (!message) {
-    throw new Error("Write a message before posting.");
+  if (!message && !photoFile) {
+    throw new Error("Add a message or photo before posting.");
   }
 
-  if (message.length > 1200) {
+  if (message && message.length > 1200) {
     throw new Error("Messages must be 1200 characters or fewer.");
   }
 
@@ -254,7 +254,7 @@ async function insertMemoryPostRecord({
     stickyNoteStyle: string;
     memoryPenStyle: string;
   };
-  message: string;
+  message: string | null;
   profile: Profile;
   status: MemoryPostStatus;
 }): Promise<{
@@ -525,6 +525,94 @@ export async function moderatePostAction(formData: FormData) {
   }
 
   revalidatePath("/dashboard");
+}
+
+export async function updateOwnMemoryPostAction(
+  postId: string,
+  returnPath: string,
+  formData: FormData,
+) {
+  const profile = await ensureUserProfile();
+
+  if (!profile) {
+    redirect("/login");
+  }
+
+  const supabase = getSupabaseAdminClient();
+
+  if (!supabase) {
+    throw new Error("Supabase service role is not configured.");
+  }
+
+  const { data: post, error: postError } = await supabase
+    .from("memory_posts")
+    .select("id, board_id, event_id, profile_id, user_id, clerk_user_id")
+    .eq("id", postId)
+    .maybeSingle();
+
+  if (postError) {
+    throw new Error(postError.message);
+  }
+
+  const safeReturnPath = normalizeMemoryReturnPath(returnPath);
+
+  if (!post) {
+    redirect(safeReturnPath);
+  }
+
+  const isOwner =
+    post.profile_id === profile.id ||
+    post.user_id === profile.id ||
+    post.clerk_user_id === profile.clerkUserId;
+
+  if (!isOwner) {
+    throw new Error("You can only edit memories you posted.");
+  }
+
+  const message = clean(formData.get("message"));
+  const memoryPostStyle = normalizeMemoryPostStyleSelection({
+    stickyNoteStyle: formData.get("stickyNoteStyle"),
+    memoryPenStyle: formData.get("memoryPenStyle"),
+  });
+
+  if (!message) {
+    throw new Error("Write a message before saving.");
+  }
+
+  if (message.length > 1200) {
+    throw new Error("Messages must be 1200 characters or fewer.");
+  }
+
+  const { error: updateError } = await supabase
+    .from("memory_posts")
+    .update({
+      caption: message,
+      sticky_note_style: memoryPostStyle.stickyNoteStyle,
+      message_pen_style: memoryPostStyle.memoryPenStyle,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", postId);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  const boardId = String(post.board_id ?? post.event_id ?? "");
+  const board = boardId ? await getBoardById(boardId) : null;
+
+  if (board) {
+    revalidatePath(`/boards/${board.id}`);
+
+    if (board.boardType === "official_event") {
+      revalidatePath(`/events/${board.slug}`);
+      revalidatePath(`/events/${board.slug}/board`);
+      revalidatePath(`/official-events/${board.id}`);
+      revalidatePath(`/official-events/${board.id}/board`);
+    }
+  }
+
+  revalidatePath(safeReturnPath);
+  redirect(safeReturnPath);
 }
 
 export async function deleteOwnMemoryPostAction(
@@ -856,6 +944,16 @@ function clean(value: FormDataEntryValue | null) {
   return next.length > 0 ? next : null;
 }
 
+function normalizeMemoryReturnPath(returnPath: string, fallback = "/dashboard") {
+  const next = returnPath.trim();
+
+  if (next.startsWith("/") && !next.startsWith("//")) {
+    return next;
+  }
+
+  return fallback;
+}
+
 function createMemoryPostRotation() {
   return Math.round((Math.random() * 3 - 1.5) * 10) / 10;
 }
@@ -920,7 +1018,7 @@ export async function syncOverlayStickersAction(payload: {
   const incomingByPost = new Map<string, PlacedSticker[]>();
 
   if (!canUsePremiumStickers(profile)) {
-    throw new Error("Premium is required to use stickers.");
+    throw new Error("Sign in to use stickers.");
   }
 
   for (const sticker of payload.stickers) {
