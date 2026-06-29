@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { ClerkProvider } from "@clerk/nextjs";
 import { AppNav } from "@/components/navigation/AppNav";
 import "./globals.css";
@@ -12,6 +13,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const polandKaito = localFont({
+  src: "./fonts/PolandCannedIntoKaito-j9OjM.ttf",
+  variable: "--font-poland-kaito",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -39,7 +46,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${polandKaito.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-slate-950 text-slate-50">
         <ClerkProvider>

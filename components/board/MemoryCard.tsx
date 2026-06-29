@@ -2,6 +2,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { deleteOwnMemoryPostAction } from "@/app/actions/memories";
@@ -41,7 +42,7 @@ const penClassByStyle: Record<MemoryPenStyle, string> = {
   fountain_pen: "memory-pen-fountain",
 };
 
-type MemoryAttachmentStyle = "tape" | "pin-left" | "pin-right";
+type MemoryAttachmentStyle = "tape" | "pin";
 
 function getMemoryAttachmentStyle(postId: string): MemoryAttachmentStyle {
   let seed = 0;
@@ -54,7 +55,7 @@ function getMemoryAttachmentStyle(postId: string): MemoryAttachmentStyle {
     return "tape";
   }
 
-  return seed % 2 === 0 ? "pin-left" : "pin-right";
+  return "pin";
 }
 
 export function MemoryCard({
@@ -63,6 +64,7 @@ export function MemoryCard({
   selected = false,
   canEditStickers = false,
   canDeletePost = false,
+  canEditPost = canDeletePost,
   onSelect,
   onStickerMove,
   onStickerDelete,
@@ -73,6 +75,7 @@ export function MemoryCard({
   stickers?: PlacedSticker[];
   selected?: boolean;
   canEditStickers?: boolean;
+  canEditPost?: boolean;
   canDeletePost?: boolean;
   onSelect?: (postId: string) => void;
   onStickerMove?: (stickerId: string, x: number, y: number) => void;
@@ -83,7 +86,11 @@ export function MemoryCard({
   const stickerLayerRef = useRef<HTMLDivElement | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const deleteAction = deleteOwnMemoryPostAction.bind(null, post.id, returnPath);
+  const editHref = `/memories/${post.id}/edit${
+    returnPath ? `?returnPath=${encodeURIComponent(returnPath)}` : ""
+  }`;
   const hasPhoto = post.imageUrl.trim().length > 0;
+  const hasMessage = (post.caption?.trim().length ?? 0) > 0;
   const paperClassName = paperClassByStyle[post.stickyNoteStyle] ?? "memory-paper-mint";
   const penClassName = penClassByStyle[post.memoryPenStyle] ?? "memory-pen-classic";
   const attachmentStyle = getMemoryAttachmentStyle(post.id);
@@ -132,12 +139,7 @@ export function MemoryCard({
           <span className="memory-card-tape memory-card-tape-top-center" aria-hidden="true" />
         ) : (
           <span
-            className={cn(
-              "memory-card-push-pin",
-              attachmentStyle === "pin-left"
-                ? "memory-card-push-pin-left"
-                : "memory-card-push-pin-right",
-            )}
+            className="memory-card-push-pin memory-card-push-pin-center"
             aria-hidden="true"
           />
         )}
@@ -146,25 +148,46 @@ export function MemoryCard({
           <time className="min-w-0 text-xs font-bold text-slate-500">
             {formatDate(post.createdAt)}
           </time>
-          {canDeletePost ? (
-            <button
-              aria-label="Delete memory"
-              className="memory-delete-icon-button inline-flex size-10 shrink-0 items-center justify-center rounded-[0.85rem] p-0 transition"
-              onClick={(event) => {
-                event.stopPropagation();
-                setConfirmDeleteOpen(true);
-              }}
-              type="button"
-            >
-              <Image
-                alt=""
-                aria-hidden="true"
-                className="h-7 w-7 object-contain"
-                height={40}
-                src="/memory-board-actions/delete.png"
-                width={40}
-              />
-            </button>
+          {canEditPost || canDeletePost ? (
+            <div className="memory-card-action-row flex shrink-0 items-center gap-1">
+              {canEditPost ? (
+                <Link
+                  aria-label="Edit memory"
+                  className="memory-card-icon-button inline-flex size-10 shrink-0 items-center justify-center rounded-[0.85rem] p-0 transition memory-edit-icon-button"
+                  href={editHref}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className="memory-card-icon-image h-7 w-7 object-contain"
+                    height={40}
+                    src="/memory-board-actions/edit.png"
+                    width={40}
+                  />
+                </Link>
+              ) : null}
+              {canDeletePost ? (
+                <button
+                  aria-label="Delete memory"
+                  className="memory-card-icon-button inline-flex size-10 shrink-0 items-center justify-center rounded-[0.85rem] p-0 transition memory-delete-icon-button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setConfirmDeleteOpen(true);
+                  }}
+                  type="button"
+                >
+                  <Image
+                    alt=""
+                    aria-hidden="true"
+                    className="memory-card-icon-image h-7 w-7 object-contain"
+                    height={40}
+                    src="/memory-board-actions/delete.png"
+                    width={40}
+                  />
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </header>
 
@@ -198,11 +221,11 @@ export function MemoryCard({
         ) : null}
 
         {hasPhoto ? (
-          <div className="memory-post-media relative z-10 mt-3 overflow-hidden rounded-[0.95rem] border-2 bg-white">
+          <div className="memory-post-media relative z-10 mx-auto mt-3 overflow-hidden rounded-[0.95rem] border-2 bg-white">
             <img
               src={post.imageUrl}
               alt={post.caption ?? "Event memory"}
-              className="aspect-[4/3] w-full object-cover"
+              className="memory-post-image"
               loading="lazy"
             />
             <div
@@ -216,7 +239,7 @@ export function MemoryCard({
           </div>
         ) : null}
 
-        {post.caption ? (
+        {hasMessage ? (
           <div
             className={cn(
               "memory-post-message-note relative z-10 mt-3 overflow-hidden rounded-[0.85rem] border-2 px-4 py-4",

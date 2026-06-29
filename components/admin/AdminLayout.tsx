@@ -13,7 +13,7 @@ export function AdminLayout({
 }) {
   return (
     <main className="cosmic-bg evespace-page">
-      <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[15rem_1fr]">
+      <div className="evespace-content-shell grid gap-8 lg:grid-cols-[15rem_1fr]">
         <aside className="glass-panel h-fit rounded-[2rem] p-4">
           <Link className="block px-3 py-3 font-semibold tracking-[0.28em]" href="/">
             EVESPACE

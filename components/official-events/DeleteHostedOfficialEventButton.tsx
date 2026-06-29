@@ -11,6 +11,7 @@ export function DeleteHostedOfficialEventButton({
 }) {
   return (
     <form
+      className="min-w-0"
       action={deleteHostedOfficialEventAction}
       onSubmit={(event) => {
         const confirmed = window.confirm(
@@ -24,7 +25,7 @@ export function DeleteHostedOfficialEventButton({
     >
       <input name="boardId" type="hidden" value={boardId} />
       <button
-        className="memory-board-danger-button inline-flex min-h-11 items-center justify-center rounded-full px-5 py-2.5 text-sm font-black transition"
+        className="dashboard-board-action dashboard-board-danger-action inline-flex min-h-11 min-w-0 items-center justify-center rounded-full px-5 py-2.5 text-sm font-semibold transition"
         type="submit"
       >
         Delete

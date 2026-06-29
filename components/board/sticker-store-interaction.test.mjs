@@ -58,4 +58,49 @@ describe("sticker store interactions", () => {
       "sticker store scroll area should support momentum touch scrolling without leaking page scroll",
     );
   });
+
+  it("prevents mobile browsers from opening the native save-image callout on stickers", async () => {
+    const visualSource = await readFile("components/board/StickerVisual.tsx", "utf8");
+
+    assert.match(
+      visualSource,
+      /\[-webkit-touch-callout:none\]/,
+      "sticker images should suppress the iOS long-press image callout",
+    );
+    assert.match(
+      visualSource,
+      /\[-webkit-user-drag:none\]/,
+      "sticker images should opt out of WebKit's native image drag behavior",
+    );
+    assert.match(
+      visualSource,
+      /pointer-events-none/,
+      "pointer input should land on the app's drag handles instead of the image element",
+    );
+    assert.match(
+      visualSource,
+      /onContextMenu=\{\(event\) => event\.preventDefault\(\)\}/,
+      "sticker images should prevent the native context menu fallback",
+    );
+  });
+
+  it("disables native image handling on the sticker drag ghost", async () => {
+    const boardSource = await readFile("components/board/InteractiveMemoryBoard.tsx", "utf8");
+
+    assert.match(
+      boardSource,
+      /ghost\.style\.setProperty\("-webkit-touch-callout",\s*"none"\)/,
+      "the drag ghost should also suppress the iOS long-press image callout",
+    );
+    assert.match(
+      boardSource,
+      /ghost\.style\.setProperty\("-webkit-user-drag",\s*"none"\)/,
+      "the drag ghost should opt out of WebKit's native image dragging",
+    );
+    assert.match(
+      boardSource,
+      /ghost\.style\.userSelect = "none"/,
+      "the drag ghost should not become selectable while following the pointer",
+    );
+  });
 });

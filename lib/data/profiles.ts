@@ -1,4 +1,5 @@
 import { mapProfile } from "@/lib/data/mappers";
+import { orderSuggestedExploreProfiles } from "@/lib/data/profile-suggestions.mjs";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import type { FollowRelationshipStatus, Profile } from "@/types/evespace";
 
@@ -64,7 +65,7 @@ export async function getExploreProfiles(profile: Profile): Promise<ExploreProfi
     (blockedBy ?? []).map((block) => String(block.blocker_profile_id)),
   );
 
-  return profiles.map((row) => {
+  const exploreProfiles = profiles.map((row) => {
     const nextProfile = mapProfile(row);
 
     let followStatus: FollowRelationshipStatus = "none";
@@ -84,6 +85,8 @@ export async function getExploreProfiles(profile: Profile): Promise<ExploreProfi
       followStatus,
     };
   });
+
+  return orderSuggestedExploreProfiles(exploreProfiles);
 }
 
 export async function getProfileById(profileId: string): Promise<Profile | null> {

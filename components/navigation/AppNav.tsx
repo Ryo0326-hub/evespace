@@ -81,6 +81,14 @@ export function AppNav() {
             >
               <NavIcon src="/navigation-icons/notification.png" />
             </Link>
+            <Link
+              aria-label="Your Planet"
+              className="group flex h-11 w-11 items-center justify-center rounded-full transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
+              href="/profile"
+              title="Your Planet"
+            >
+              <NavIcon src="/navigation-icons/your-planet.png" />
+            </Link>
             <ProfileMenu />
           </Show>
         </nav>
@@ -157,16 +165,16 @@ function ProfileMenu() {
         >
           <Link
             className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"
-            href="/profile"
+            href="/dashboard"
             onClick={() => setOpen(false)}
             role="menuitem"
           >
             <NavIcon
               className={menuIconClassName}
               size={28}
-              src="/navigation-icons/your-planet.png"
+              src="/dashboard-icons/dashboard.png"
             />
-            <span>Your Planet</span>
+            <span>Dashboard</span>
           </Link>
           <button
             className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-500"

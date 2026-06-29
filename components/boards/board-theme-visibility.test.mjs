@@ -32,4 +32,42 @@ describe("shared board theme visibility", () => {
       "friend board cards should let DashboardBoardCard read board.boardBackgroundTheme",
     );
   });
+
+  it("renders dashboard board previews as glossy glass cards with theme color accents", async () => {
+    const [cardSource, cssSource] = await Promise.all([
+      readFile("components/boards/DashboardBoardCard.tsx", "utf8"),
+      readFile("app/globals.css", "utf8"),
+    ]);
+
+    assert.match(cardSource, /dashboard-board-card/);
+    assert.match(cardSource, /dashboard-board-preview/);
+    assert.match(cardSource, /dashboard-board-preview-sheen/);
+    assert.match(cardSource, /dashboard-board-theme-wash/);
+    assert.match(cardSource, /background\.boardClassName/);
+    assert.match(cardSource, /background\.previewClassName/);
+    assert.match(cardSource, /dashboard-board-action/);
+    assert.doesNotMatch(cardSource, /border-\[3px\][^"]*border-black/);
+    assert.doesNotMatch(cardSource, /shadow-\[8px_8px_0/);
+    assert.doesNotMatch(cardSource, /memory-board-cute-button|memory-board-soft-button/);
+    assert.match(
+      cssSource,
+      /\.dashboard-board-card\s*\{[\s\S]*backdrop-filter:\s*blur\(/,
+      "dashboard board previews should use the app's glossy glass treatment",
+    );
+    assert.match(
+      cssSource,
+      /\.dashboard-board-card\s*\{[\s\S]*var\(--board-primary-bg/,
+      "dashboard board previews should tint their glow with the selected board theme",
+    );
+    assert.match(
+      cssSource,
+      /\.dashboard-board-preview\s*\{[\s\S]*var\(--board-primary-bg/,
+      "dashboard board preview marker should use the selected board theme color",
+    );
+    assert.match(
+      cssSource,
+      /\.dashboard-board-action\s*\{[\s\S]*background:\s*rgba\(15,\s*23,\s*42,\s*0\.72\)/,
+      "card action buttons should match the dashboard's dark glossy button style",
+    );
+  });
 });

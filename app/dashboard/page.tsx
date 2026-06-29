@@ -17,7 +17,6 @@ import { FriendsBoardsFeed } from "@/components/boards/FriendsBoardsFeed";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LinkButton } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { getPremiumStatus } from "@/lib/premium/premium-utils.mjs";
 import type { Profile } from "@/types/evespace";
 
 type PeopleListMode = "following" | "followers";
@@ -49,22 +48,19 @@ export default async function DashboardPage({
     getFollowingProfiles(profile.id),
     getFollowerProfiles(profile.id),
   ]);
-  const premiumStatus = getPremiumStatus(profile);
-  const hostOfficialEventHref = premiumStatus.isPremium
-    ? "/official-events/new"
-    : "/premium?next=/official-events/new";
+  const hostOfficialEventHref = "/premium?next=/official-events/new";
 
   return (
     <main className="cosmic-bg evespace-page">
       <div className="evespace-shell max-w-6xl">
-        <header className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_16rem] sm:items-end sm:justify-between">
+        <header className="dashboard-desktop-header grid gap-4 sm:grid-cols-[minmax(0,1fr)_16rem] sm:items-start sm:justify-between lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="evespace-page-header">
             <p className="evespace-kicker">
               Dashboard
             </p>
           </div>
-          <div className="dashboard-action-stack grid w-full gap-2 sm:w-64">
-            <div className="dashboard-follow-grid grid grid-cols-2 gap-2">
+          <div className="dashboard-action-stack grid w-full gap-2 sm:w-64 lg:w-auto lg:grid-cols-[17.75rem_10rem_15rem] lg:items-center lg:justify-end">
+            <div className="dashboard-follow-grid grid grid-cols-2 gap-2 lg:grid-cols-[8.75rem_8.75rem]">
               <FollowStatLink
                 active={peopleMode === "following"}
                 count={followCounts.following}
@@ -78,7 +74,8 @@ export default async function DashboardPage({
                 label="Followers"
               />
             </div>
-            <LinkButton className="dashboard-primary-action w-full gap-2" href="/boards/new">
+            <LinkButton className="dashboard-primary-action w-full gap-2 lg:min-h-12" href="/boards/new">
+              Create
               <Image
                 alt=""
                 aria-hidden="true"
@@ -87,13 +84,13 @@ export default async function DashboardPage({
                 src="/dashboard-icons/create.png"
                 width={28}
               />
-              Create
             </LinkButton>
             <LinkButton
-              className="dashboard-primary-action w-full gap-2"
+              className="dashboard-primary-action w-full gap-2 lg:min-h-12"
               href={hostOfficialEventHref}
               variant="secondary"
             >
+              Host an official event
               <Image
                 alt=""
                 aria-hidden="true"
@@ -102,7 +99,6 @@ export default async function DashboardPage({
                 src="/dashboard-icons/host.png"
                 width={32}
               />
-              Host an official event
             </LinkButton>
           </div>
         </header>

@@ -26,19 +26,30 @@ export function DashboardBoardCard({
   return (
     <Card
       className={cn(
-        "grid gap-5 overflow-hidden rounded-[2rem] border-[3px] border-black p-5 text-black shadow-[8px_8px_0_rgba(5,5,5,0.16)] backdrop-blur-0 md:grid-cols-[minmax(0,1fr)_auto] md:items-center",
-        background.cardClassName,
+        "dashboard-board-card relative isolate grid gap-5 overflow-hidden rounded-[1.5rem] p-4 text-white sm:p-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center",
+        background.boardClassName,
       )}
     >
-      <div className="flex min-w-0 gap-4">
+      <span className="dashboard-board-theme-wash" aria-hidden="true" />
+      <div className="relative z-10 flex min-w-0 gap-4">
         <div
           className={cn(
-            "size-16 shrink-0 rounded-[1.35rem] border-2 border-black shadow-[3px_3px_0_rgba(5,5,5,0.16)] sm:size-20",
+            "dashboard-board-preview relative size-16 shrink-0 overflow-hidden rounded-[1.15rem] sm:size-20",
             background.previewClassName,
           )}
-        />
+        >
+          <span className="dashboard-board-preview-sheen" aria-hidden="true" />
+          <span
+            className="dashboard-board-preview-line dashboard-board-preview-line-one"
+            aria-hidden="true"
+          />
+          <span
+            className="dashboard-board-preview-line dashboard-board-preview-line-two"
+            aria-hidden="true"
+          />
+        </div>
         <div className="min-w-0 pt-1">
-          <p className={cn("min-w-0 text-2xl font-black leading-tight [overflow-wrap:anywhere]", background.textClassName)}>
+          <p className="min-w-0 text-xl font-semibold leading-tight text-white [overflow-wrap:anywhere] sm:text-2xl">
             {board.title}
           </p>
           {board.boardType === "official_event" ? (
@@ -46,27 +57,27 @@ export function DashboardBoardCard({
               <EventVerificationBadge status={board.verificationStatus} />
             </span>
           ) : (
-            <p className={cn("mt-2 text-sm font-black", background.mutedTextClassName)}>
+            <p className="dashboard-board-pill mt-2 inline-flex">
               {boardAccessLabel(board)}
             </p>
           )}
-          <p className={cn("mt-2 text-sm font-semibold", background.mutedTextClassName)}>
+          <p className="mt-2 text-sm font-medium text-slate-300">
             {compactDateLocation(board.startTime, board.locationName)}
           </p>
           {board.ownerDisplayName ? (
-            <p className={cn("mt-1 text-xs font-bold", background.mutedTextClassName)}>
+            <p className="mt-1 text-xs font-semibold text-slate-400">
               by {board.ownerDisplayName}
             </p>
           ) : null}
         </div>
       </div>
-      <div className="flex min-w-0 flex-wrap gap-2 md:justify-end">
-        <LinkButton className="memory-board-cute-button" href={href}>
+      <div className="relative z-10 flex min-w-0 flex-wrap gap-2 md:justify-end">
+        <LinkButton className="dashboard-board-action" href={href}>
           {board.boardType === "official_event" ? "Open Page" : "Open Board"}
         </LinkButton>
         {canEdit && board.boardType === "private_memory" ? (
           <LinkButton
-            className="memory-board-soft-button"
+            className="dashboard-board-action dashboard-board-secondary-action"
             href={`/boards/${board.id}/edit`}
             variant="secondary"
           >

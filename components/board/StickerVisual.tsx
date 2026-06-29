@@ -21,9 +21,13 @@ export function StickerVisual({
   return (
     <img
       alt={`${sticker.name} sticker`}
-      className={cn("select-none object-contain", className)}
+      className={cn(
+        "pointer-events-none select-none object-contain [-webkit-touch-callout:none] [-webkit-user-drag:none]",
+        className,
+      )}
       draggable={false}
       height={size}
+      onContextMenu={(event) => event.preventDefault()}
       src={sticker.src}
       style={{ height: size, width: size }}
       width={size}
