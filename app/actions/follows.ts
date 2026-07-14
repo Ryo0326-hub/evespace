@@ -167,9 +167,10 @@ export async function acceptFollowRequestAction(formData: FormData) {
     throw new Error(followError.message);
   }
 
+  const acceptedAt = new Date().toISOString();
   const { error: updateError } = await supabase
     .from("user_follow_requests")
-    .update({ status: "accepted", updated_at: new Date().toISOString() })
+    .update({ status: "accepted", updated_at: acceptedAt })
     .eq("id", requestId);
 
   if (updateError) {
@@ -178,6 +179,7 @@ export async function acceptFollowRequestAction(formData: FormData) {
 
   if (requester) {
     await createFollowNotifications({
+      acceptedAt,
       follower: mapProfile(requester as Record<string, unknown>),
       following: profile,
     });

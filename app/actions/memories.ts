@@ -10,7 +10,11 @@ import {
   getBoardById,
 } from "@/lib/data/boards";
 import { getEventBySlug } from "@/lib/data/events";
-import { createMemoryPostAddedNotifications } from "@/lib/data/notifications";
+import {
+  createMemoryCommentNotifications,
+  createMemoryPostAddedNotifications,
+  createMemoryPostModeratedNotification,
+} from "@/lib/data/notifications";
 import { getSupabaseAdminClient } from "@/lib/supabase/admin";
 import {
   acceptedImageTypes,
@@ -505,7 +509,7 @@ export async function moderatePostAction(formData: FormData) {
 
   const { data: post, error: postError } = await supabase
     .from("memory_posts")
-    .select("board_id")
+    .select("board_id, clerk_user_id, profile_id, status")
     .eq("id", postId)
     .single();
 
@@ -513,18 +517,38 @@ export async function moderatePostAction(formData: FormData) {
     throw new Error(postError.message);
   }
 
-  await requireBoardAdmin(String(post.board_id));
+  const boardId = String(post.board_id);
+  const actorClerkUserId = await requireBoardAdmin(boardId);
 
+  if (post.status === intent) {
+    return;
+  }
+
+  const occurredAt = new Date().toISOString();
   const { error } = await supabase
     .from("memory_posts")
-    .update({ status: intent, updated_at: new Date().toISOString() })
+    .update({ status: intent, updated_at: occurredAt })
     .eq("id", postId);
 
   if (error) {
     throw new Error(error.message);
   }
 
+  const board = await getBoardById(boardId);
+  if (board) {
+    await createMemoryPostModeratedNotification({
+      actorClerkUserId,
+      board,
+      occurredAt,
+      postId,
+      recipientClerkUserId: post.clerk_user_id,
+      recipientProfileId: post.profile_id,
+      status: intent as "approved" | "rejected" | "removed",
+    });
+  }
+
   revalidatePath("/dashboard");
+  revalidatePath("/notifications");
 }
 
 export async function updateOwnMemoryPostAction(
@@ -847,7 +871,11 @@ export async function createMemoryCommentAction(
     body,
   };
 
-  const { error } = await supabase.from("memory_post_comments").insert(commentPayload);
+  const { data: comment, error } = await supabase
+    .from("memory_post_comments")
+    .insert(commentPayload)
+    .select("id")
+    .single();
 
   if (error) {
     if (isMissingParentCommentColumnError(error)) {
@@ -861,6 +889,14 @@ export async function createMemoryCommentAction(
     return { error: error.message, ok: false };
   }
 
+  await createMemoryCommentNotifications({
+    actor: profile,
+    board,
+    commentId: String(comment.id),
+    parentCommentId: replyParentId,
+    postId: post.id,
+  });
+
   if (_returnPath.startsWith("/")) {
     revalidatePath(_returnPath);
   }
@@ -871,6 +907,7 @@ export async function createMemoryCommentAction(
   } else {
     revalidatePath(`/boards/${board.id}`);
   }
+  revalidatePath("/notifications");
   return { error: null, ok: true };
 }
 

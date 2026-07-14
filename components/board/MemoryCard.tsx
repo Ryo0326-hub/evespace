@@ -128,6 +128,7 @@ export function MemoryCard({
     >
       <div
         data-memory-card-id={post.id}
+        id={`memory-${post.id}`}
         onClick={() => onSelect?.(post.id)}
         className={cn(
           "memory-post-card relative min-w-0 max-w-full overflow-visible rounded-[1.15rem] border-2 bg-[#fffaf0] p-3 text-black transition sm:p-4",

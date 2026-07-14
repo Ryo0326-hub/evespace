@@ -104,7 +104,7 @@ describe("memory board dense layout", () => {
     );
     assert.match(
       globalsSource,
-      /\.memory-card-push-pin\s*\{[\s\S]*background:[\s\S]*var\(--board-primary-bg/,
+      /\.memory-card-push-pin\s*\{[\s\S]*--memory-card-pin-cap:[^;]*var\(--board-primary-bg/,
       "push pins should use the selected theme color",
     );
     assert.match(
@@ -262,8 +262,8 @@ describe("memory board dense layout", () => {
     );
     assert.match(
       globalsSource,
-      /--memory-card-pin-center-y:\s*1\.05rem;/,
-      "push pin center should sit slightly above the date row so it looks pinned through the paper edge",
+      /--memory-card-pin-center-y:\s*0\.72rem;/,
+      "push pin center should sit near the paper edge without covering the date row",
     );
     assert.match(
       globalsSource,
@@ -272,23 +272,18 @@ describe("memory board dense layout", () => {
     );
     assert.match(
       globalsSource,
-      /\.memory-card-push-pin\s*\{[\s\S]*--memory-card-pin-cap:[\s\S]*#f04f98[\s\S]*radial-gradient/,
-      "push pin should use a brighter memorial-style cap instead of blending into the brown board theme",
+      /\.memory-card-push-pin\s*\{[\s\S]*--memory-card-pin-cap:[\s\S]*#c95757[\s\S]*--memory-card-pin-size:\s*0\.92rem;[\s\S]*radial-gradient/,
+      "push pin should use a small, warm scrapbook-style cap",
     );
     assert.match(
       globalsSource,
-      /\.memory-card-push-pin::before\s*\{[\s\S]*border-radius:\s*0 0 0\.18rem 0\.18rem;[\s\S]*transform:\s*translateX\(-50%\);/,
-      "push pin should include a tiny stem below the glossy cap",
+      /\.memory-card-push-pin::before\s*\{[\s\S]*border-radius:\s*0 0 9999px 9999px;[\s\S]*transform:\s*translateX\(-50%\);/,
+      "push pin should include a narrow metal point below the cap",
     );
     assert.match(
       globalsSource,
-      /\.memory-card-push-pin::after\s*\{[\s\S]*inset:\s*0\.36rem;/,
-      "push pin should have a recessed center dimple",
-    );
-    assert.match(
-      globalsSource,
-      /\.memory-card-push-pin::after\s*\{[\s\S]*box-shadow:\s*inset/,
-      "push pin should have a recessed center dimple",
+      /\.memory-card-push-pin::after\s*\{[\s\S]*background:\s*rgba\(255, 255, 255, 0\.42\);[\s\S]*width:\s*0\.24rem;/,
+      "push pin should use a simple highlight instead of a recessed center",
     );
   });
 
@@ -458,10 +453,10 @@ describe("memory board dense layout", () => {
       /\.memory-board-title-card::before\s*\{[\s\S]*border:\s*2px dashed var\(--board-hero-stitch[\s\S]*radial-gradient[\s\S]*repeating-linear-gradient/,
       "the board hero should use CSS stitches and paper grain instead of raster paint",
     );
-    assert.match(
+    assert.doesNotMatch(
       globalsSource,
-      /\.memory-board-title-card::after\s*\{[\s\S]*linear-gradient[\s\S]*background-size:[\s\S]*clamp\([\s\S]*filter:\s*drop-shadow/,
-      "the board hero should use responsive CSS tape tabs for scrapbook craft detail",
+      /\.memory-board-title-card::after/,
+      "the board hero should not render decorative tape in either corner",
     );
     assert.doesNotMatch(
       globalsSource,

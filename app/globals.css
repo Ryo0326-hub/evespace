@@ -95,6 +95,146 @@ select {
   backdrop-filter: blur(18px);
 }
 
+.nav-panel-backdrop {
+  animation: nav-panel-backdrop-in 180ms ease-out both;
+  transition: opacity 180ms ease;
+}
+
+.nav-panel-backdrop[data-positioned="false"],
+.nav-panel[data-positioned="false"] {
+  visibility: hidden;
+}
+
+.nav-panel {
+  animation-duration: 240ms;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  max-width: none;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.nav-panel-explore {
+  animation-name: nav-panel-slide-from-left;
+}
+
+.nav-panel-notifications {
+  animation-name: nav-panel-slide-from-right;
+}
+
+.nav-panel-header {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+.nav-panel-content {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.nav-panel-backdrop[data-closing="true"] {
+  opacity: 0;
+}
+
+.nav-panel-explore[data-closing="true"] {
+  opacity: 0;
+  transform: translateX(-100%);
+}
+
+.nav-panel-notifications[data-closing="true"] {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+@keyframes nav-panel-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes nav-panel-slide-from-left {
+  from { opacity: 0; transform: translateX(-100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes nav-panel-slide-from-right {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes nav-panel-pop {
+  from { opacity: 0; transform: translateY(-0.55rem) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (min-width: 768px) {
+  .nav-panel {
+    animation-name: nav-panel-pop;
+  }
+
+  .nav-panel-explore {
+    transform-origin: top left;
+  }
+
+  .nav-panel-notifications {
+    transform-origin: top right;
+  }
+
+  .nav-panel::before {
+    position: absolute;
+    top: -0.42rem;
+    left: calc(var(--nav-panel-pointer-x, 2rem) - 0.4rem);
+    width: 0.8rem;
+    height: 0.8rem;
+    content: "";
+    transform: rotate(45deg);
+    border-left: 1px solid rgba(255, 255, 255, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    background: #020617;
+  }
+
+  .nav-panel[data-closing="true"] {
+    opacity: 0;
+    transform: translateY(-0.55rem) scale(0.94);
+  }
+
+  .nav-panel-header {
+    padding-top: 1rem;
+  }
+}
+
+.loading-hourglass {
+  animation: loading-hourglass-flip 1.45s ease-in-out infinite;
+  filter: drop-shadow(0 0 0.3rem rgba(165, 243, 252, 0.32));
+  transform-origin: center;
+}
+
+@keyframes loading-hourglass-flip {
+  0%,
+  20% {
+    transform: rotate(0deg);
+  }
+
+  50%,
+  70% {
+    transform: rotate(180deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-hourglass {
+    animation: none;
+  }
+
+  .nav-panel,
+  .nav-panel-backdrop {
+    animation: none;
+    transition: none;
+  }
+}
+
 .evespace-page {
   min-height: 100dvh;
   overflow-x: clip;
@@ -670,8 +810,7 @@ select {
   color: var(--board-ui-text, #050505);
 }
 
-.memory-board-title-card::before,
-.memory-board-title-card::after {
+.memory-board-title-card::before {
   content: "";
   position: absolute;
   pointer-events: none;
@@ -699,49 +838,6 @@ select {
       color-mix(in srgb, var(--board-hero-edge, rgba(124, 93, 62, 0.34)) 16%, transparent) 1rem calc(1rem + 1px)
     );
   opacity: 0.72;
-}
-
-.memory-board-title-card::after {
-  inset: 0;
-  background:
-    linear-gradient(
-      105deg,
-      transparent 0 10%,
-      color-mix(in srgb, var(--board-hero-tape, #dec7a6) 86%, white) 10% 90%,
-      transparent 90%
-    ) 1rem 0.42rem / clamp(4.6rem, 18vw, 7rem) 1.05rem no-repeat,
-    linear-gradient(
-      105deg,
-      transparent 0 13%,
-      var(--board-hero-tape-ink, rgba(124, 93, 62, 0.18)) 13% 18%,
-      transparent 18% 78%,
-      var(--board-hero-tape-ink, rgba(124, 93, 62, 0.18)) 78% 84%,
-      transparent 84%
-    ) 1rem 0.42rem / clamp(4.6rem, 18vw, 7rem) 1.05rem no-repeat,
-    linear-gradient(
-      -75deg,
-      transparent 0 10%,
-      color-mix(in srgb, var(--board-hero-tape, #dec7a6) 82%, white) 10% 90%,
-      transparent 90%
-    ) right 1rem bottom 0.42rem / clamp(4.3rem, 16vw, 6.25rem) 0.95rem no-repeat,
-    radial-gradient(
-      circle,
-      color-mix(in srgb, var(--board-hero-edge, rgba(124, 93, 62, 0.34)) 78%, transparent) 0 0.14rem,
-      transparent 0.16rem
-    ) 2.08rem 1.02rem / 0.42rem 0.42rem no-repeat,
-    radial-gradient(
-      circle,
-      color-mix(in srgb, var(--board-hero-edge, rgba(124, 93, 62, 0.34)) 68%, transparent) 0 0.13rem,
-      transparent 0.15rem
-    ) right 2.05rem bottom 0.94rem / 0.4rem 0.4rem no-repeat;
-  background-size:
-    clamp(4.6rem, 18vw, 7rem) 1.05rem,
-    clamp(4.6rem, 18vw, 7rem) 1.05rem,
-    clamp(4.3rem, 16vw, 6.25rem) 0.95rem,
-    0.42rem 0.42rem,
-    0.4rem 0.4rem;
-  filter: drop-shadow(0 0.12rem 0.08rem rgba(47, 36, 27, 0.12));
-  opacity: 0.9;
 }
 
 .memory-board-title-card > * {
@@ -1755,25 +1851,19 @@ select {
 }
 
 .memory-card-push-pin {
-  --memory-card-pin-cap: color-mix(in srgb, var(--board-primary-bg, #c88f55) 34%, #f04f98);
-  --memory-card-pin-cap-light: color-mix(in srgb, var(--memory-card-pin-cap) 68%, white);
-  --memory-card-pin-cap-dark: color-mix(in srgb, var(--memory-card-pin-cap) 58%, #3b2415);
-  --memory-card-pin-center-y: 1.05rem;
-  --memory-card-pin-size: 1.18rem;
+  --memory-card-pin-cap: color-mix(in srgb, var(--board-primary-bg, #c88f55) 22%, #c95757);
+  --memory-card-pin-cap-light: color-mix(in srgb, var(--memory-card-pin-cap) 72%, white);
+  --memory-card-pin-cap-dark: color-mix(in srgb, var(--memory-card-pin-cap) 78%, #572e26);
+  --memory-card-pin-center-y: 0.72rem;
+  --memory-card-pin-size: 0.92rem;
   background:
-    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.92) 0 0.12rem, transparent 0.13rem),
-    radial-gradient(
-      circle at 46% 43%,
-      var(--memory-card-pin-cap-light) 0 30%,
-      var(--memory-card-pin-cap) 31% 62%,
-      var(--memory-card-pin-cap-dark) 100%
-    );
-  border: 1px solid color-mix(in srgb, var(--board-ui-border, #7a5b49) 48%, transparent);
-  border-radius: 9999px 9999px 0.42rem 0.42rem;
+    radial-gradient(circle at 31% 26%, rgba(255, 255, 255, 0.82) 0 0.08rem, transparent 0.09rem),
+    radial-gradient(circle at 40% 36%, var(--memory-card-pin-cap-light), var(--memory-card-pin-cap) 54%, var(--memory-card-pin-cap-dark) 100%);
+  border: 1px solid color-mix(in srgb, var(--memory-card-pin-cap-dark) 72%, transparent);
+  border-radius: 50%;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.58),
-    inset 0 -0.22rem 0.28rem rgba(74, 43, 24, 0.22),
-    0 0.18rem 0.28rem color-mix(in srgb, var(--board-ui-border, #7a5b49) 26%, transparent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 0.12rem 0.18rem rgba(66, 39, 27, 0.28);
   height: var(--memory-card-pin-size);
   pointer-events: none;
   position: absolute;
@@ -1789,27 +1879,27 @@ select {
       color-mix(in srgb, var(--board-ui-border, #7a5b49) 58%, #ffffff 16%),
       color-mix(in srgb, var(--board-ui-border, #7a5b49) 82%, #1f130c)
     );
-  border-radius: 0 0 0.18rem 0.18rem;
-  box-shadow: 0 0.08rem 0.16rem color-mix(in srgb, var(--board-ui-border, #7a5b49) 28%, transparent);
+  border-radius: 0 0 9999px 9999px;
+  box-shadow: 0 0.06rem 0.1rem rgba(66, 39, 27, 0.22);
   content: "";
-  height: 0.42rem;
+  height: 0.32rem;
   left: 50%;
   position: absolute;
-  top: calc(100% - 0.12rem);
+  top: calc(100% - 0.08rem);
   transform: translateX(-50%);
-  width: 0.34rem;
+  width: 0.16rem;
 }
 
 .memory-card-push-pin::after {
-  background:
-    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.36) 0 0.035rem, transparent 0.045rem),
-    color-mix(in srgb, var(--board-ui-border, #7a5b49) 72%, black);
-  border: 1px solid color-mix(in srgb, var(--board-primary-bg, #c88f55) 42%, rgba(255, 255, 255, 0.28));
+  background: rgba(255, 255, 255, 0.42);
   border-radius: 9999px;
-  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.28);
   content: "";
-  inset: 0.36rem;
+  height: 0.12rem;
+  left: 0.2rem;
   position: absolute;
+  top: 0.16rem;
+  transform: rotate(-20deg);
+  width: 0.24rem;
 }
 
 .memory-card-push-pin-center {

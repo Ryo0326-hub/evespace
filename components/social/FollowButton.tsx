@@ -5,6 +5,7 @@ import {
   unfollowUserAction,
 } from "@/app/actions/follows";
 import { Button } from "@/components/ui/Button";
+import { NotificationActionObserver } from "@/components/notifications/NotificationActionObserver";
 import type { FollowRelationshipStatus } from "@/types/evespace";
 
 type FollowButtonTone = "default" | "board";
@@ -84,6 +85,7 @@ export function FollowButton({
           >
             {status === "following" ? "Unfollow" : "Request follow"}
           </Button>
+          {status === "none" ? <NotificationActionObserver /> : null}
         </form>
       )}
 
