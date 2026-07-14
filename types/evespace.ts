@@ -343,7 +343,13 @@ export type NotificationType =
   | "followed_you"
   | "you_followed"
   | "follow_requested"
+  | "follow_request_sent"
+  | "follow_request_accepted"
   | "memory_post_added"
+  | "memory_post_commented"
+  | "comment_replied"
+  | "memory_post_moderated"
+  | "event_verification_updated"
   | "board_created"
   | "planet_level_up"
   | "friend_board_created";
@@ -355,6 +361,7 @@ export type AppNotification = {
   actorProfileId: string | null;
   actorClerkUserId: string | null;
   actorDisplayName: string | null;
+  actorAvatarUrl: string | null;
   notificationType: NotificationType;
   title: string;
   body: string | null;
@@ -365,5 +372,6 @@ export type AppNotification = {
   emailSentAt: string | null;
   emailError: string | null;
   followRequestStatus: FollowRequest["status"] | null;
+  targetImageUrl: string | null;
   createdAt: string;
 };

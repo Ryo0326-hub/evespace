@@ -40,8 +40,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
+  explorePanel,
+  notificationsPanel,
 }: Readonly<{
   children: React.ReactNode;
+  explorePanel: React.ReactNode;
+  notificationsPanel: React.ReactNode;
 }>) {
   return (
     <html
@@ -50,7 +54,10 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-slate-950 text-slate-50">
         <ClerkProvider>
-          <AppNav />
+          <AppNav
+            explorePanel={explorePanel}
+            notificationsPanel={notificationsPanel}
+          />
           {children}
         </ClerkProvider>
       </body>

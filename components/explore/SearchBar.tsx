@@ -27,7 +27,8 @@ export function SearchBar() {
   useEffect(() => {
     const timer = setTimeout(() => {
       startTransition(() => {
-        router.push(`${pathname}?${createQueryString("q", query)}`);
+        const queryString = createQueryString("q", query);
+        router.replace(queryString ? `${pathname}?${queryString}` : pathname);
       });
     }, 300);
 

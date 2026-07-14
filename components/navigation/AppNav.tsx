@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -8,6 +9,7 @@ import {
   useClerk,
   useUser,
 } from "@clerk/nextjs";
+import { NotificationUnreadBadge } from "@/components/navigation/NotificationUnreadBadge";
 
 const navIconClassName =
   "h-9 w-9 object-contain transition duration-150 group-hover:scale-105 group-active:scale-95";
@@ -35,7 +37,13 @@ function NavIcon({
   );
 }
 
-export function AppNav() {
+export function AppNav({
+  explorePanel,
+  notificationsPanel,
+}: {
+  explorePanel: ReactNode;
+  notificationsPanel: ReactNode;
+}) {
   const { openSignIn, openSignUp } = useClerk();
 
   return (
@@ -65,22 +73,29 @@ export function AppNav() {
             </button>
           </Show>
           <Show when="signed-in">
-            <Link
-              aria-label="Explore"
-              className="group flex h-11 w-11 items-center justify-center rounded-full transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
-              href="/explore"
-              title="Explore"
-            >
-              <NavIcon src="/navigation-icons/search.png" />
-            </Link>
-            <Link
-              aria-label="Notifications"
-              className="group flex h-11 w-11 items-center justify-center rounded-full transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
-              href="/notifications"
-              title="Notifications"
-            >
-              <NavIcon src="/navigation-icons/notification.png" />
-            </Link>
+            <div className="relative" data-nav-panel-anchor="explore">
+              <Link
+                aria-label="Explore"
+                className="group flex h-11 w-11 items-center justify-center rounded-full transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
+                href="/explore"
+                title="Explore"
+              >
+                <NavIcon src="/navigation-icons/search.png" />
+              </Link>
+              {explorePanel}
+            </div>
+            <div className="relative" data-nav-panel-anchor="notifications">
+              <Link
+                aria-label="Notifications"
+                className="group relative flex h-11 w-11 items-center justify-center rounded-full transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
+                href="/notifications"
+                title="Notifications"
+              >
+                <NavIcon src="/navigation-icons/notification.png" />
+                <NotificationUnreadBadge />
+              </Link>
+              {notificationsPanel}
+            </div>
             <Link
               aria-label="Your Planet"
               className="group flex h-11 w-11 items-center justify-center rounded-full transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-200"
